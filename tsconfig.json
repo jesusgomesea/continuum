@@ -10,7 +10,12 @@
     "pacotes/*/testes/**/*.ts",
     "pacotes/*/testes/**/*.tsx",
     "pacotes/*/vitrine/**/*.tsx",
+    "pacotes/*/web/**/*.ts",
+    "pacotes/*/web/**/*.tsx",
     "pacotes/*/vite.config.ts",
+    "pacotes/*/vite.*.config.ts",
+    "pacotes/*/electron/**/*.ts",
+    "pacotes/*/scripts/**/*.ts",
     "vitest.config.ts"
   ]
 }

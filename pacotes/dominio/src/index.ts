@@ -8,3 +8,11 @@
 
 /** Nome do pacote (usado pelo teste do esqueleto, Passo 0.1). */
 export const PACOTE = 'dominio';
+
+export * from './dinheiro.ts';
+export * from './documentos.ts';
+export * from './codigo-venda.ts';
+export * from './erros.ts';
+export * from './id.ts';
+export * from './estoque.ts';
+export * from './venda.ts';

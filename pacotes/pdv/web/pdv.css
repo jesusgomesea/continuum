@@ -1,0 +1,419 @@
+/* Telas do PDV. Só tokens de pacotes/interface/src/tokens/tokens.css: nenhuma cor fixa.
+   Feito para 1366×768 e tela de toque (área mínima de toque: --toque-minimo). */
+
+/* ------------------------------------------------------------ campos */
+label {
+  display: grid;
+  gap: var(--espaco-1);
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+input:not([type='checkbox']):not([type='radio']) {
+  min-height: var(--toque-minimo);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-p);
+  background: var(--cor-superficie-2);
+  color: var(--cor-texto);
+  font: inherit;
+}
+
+.suave {
+  color: var(--cor-texto-fraco);
+  margin: 0;
+}
+
+.aviso {
+  margin: 0;
+  padding: var(--espaco-3);
+  border-radius: var(--raio-p);
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro);
+}
+
+.botoes {
+  display: flex;
+  gap: var(--espaco-2);
+  flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------ cabeçalho */
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-6);
+  padding: var(--espaco-3) var(--espaco-6);
+  background: var(--cor-lateral);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.marca {
+  display: grid;
+}
+
+.marca strong {
+  font-weight: var(--peso-extra);
+  letter-spacing: 0.08em;
+}
+
+.marca strong span {
+  background: var(--gradiente-primario);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.marca small,
+.fila small {
+  color: var(--cor-texto-fraco);
+  font-size: var(--texto-xs);
+}
+
+.fila {
+  display: grid;
+  gap: var(--espaco-1);
+  justify-items: start;
+}
+
+.acoes {
+  margin-left: auto;
+  display: flex;
+  gap: var(--espaco-2);
+}
+
+.faixa {
+  padding: var(--espaco-3) var(--espaco-6) 0;
+}
+
+/* ------------------------------------------------------------ telas centralizadas */
+.centro {
+  min-height: calc(100vh - 80px);
+  display: grid;
+  place-items: center;
+  gap: var(--espaco-4);
+  padding: var(--espaco-6);
+}
+
+.painel {
+  display: grid;
+  gap: var(--espaco-4);
+  width: min(420px, 100%);
+  padding: var(--espaco-8);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-cartao);
+}
+
+.painel.largo {
+  width: min(560px, 100%);
+}
+
+/* ------------------------------------------------------------ venda */
+.venda {
+  display: grid;
+  grid-template-columns: 1fr minmax(340px, 420px);
+  grid-template-rows: auto 1fr;
+  gap: var(--espaco-4);
+  padding: var(--espaco-4) var(--espaco-6);
+}
+
+.ultimas {
+  align-self: start;
+}
+
+.catalogo {
+  display: grid;
+  gap: var(--espaco-3);
+  align-content: start;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--espaco-3);
+}
+
+.produto {
+  display: grid;
+  gap: var(--espaco-1);
+  min-height: 96px;
+  padding: var(--espaco-3);
+  text-align: left;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-m);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color var(--transicao), background var(--transicao);
+}
+
+.produto:hover {
+  border-color: var(--cor-primaria);
+  background: var(--cor-primaria-fundo);
+}
+
+.produto .nome {
+  font-weight: var(--peso-medio);
+}
+
+.produto .preco {
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+}
+
+.produto .saldo {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.produto .saldo.zerado {
+  color: var(--cor-atencao);
+}
+
+.carrinho {
+  grid-row: span 2;
+  align-self: start;
+  display: grid;
+  gap: var(--espaco-4);
+}
+
+.itens,
+.pagos,
+.ultimas ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.itens li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.quantidade {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.quantidade button,
+.pagos button {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-p);
+  background: var(--cor-superficie-2);
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.quantidade svg,
+.pagos svg {
+  width: 16px;
+  height: 16px;
+}
+
+.valor {
+  font-variant-numeric: tabular-nums;
+}
+
+.campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-3);
+}
+
+.supervisor {
+  color: var(--cor-atencao);
+}
+
+.totais {
+  display: grid;
+  gap: var(--espaco-1);
+  margin: 0;
+}
+
+.totais > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-4);
+}
+
+.totais dt {
+  color: var(--cor-texto-suave);
+}
+
+.totais dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.totais .total {
+  padding-top: var(--espaco-2);
+  border-top: 1px solid var(--cor-borda);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+}
+
+.pagamento {
+  display: grid;
+  gap: var(--espaco-3);
+}
+
+.formas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--espaco-2);
+}
+
+.pagos li {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.pagos li button {
+  margin-left: auto;
+}
+
+.resumo-pagamento {
+  margin: 0;
+  font-size: var(--texto-lg);
+}
+
+/* ------------------------------------------------------------ últimas vendas */
+.ultimas li {
+  display: grid;
+  gap: var(--espaco-2);
+  padding-bottom: var(--espaco-2);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.linha-venda {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: var(--espaco-3);
+}
+
+.finalizada .botoes {
+  justify-content: center;
+}
+
+.codigo {
+  font-family: var(--fonte-mono);
+}
+
+.cancelamento {
+  display: grid;
+  gap: var(--espaco-3);
+  padding: var(--espaco-3);
+  border-radius: var(--raio-p);
+  background: var(--cor-superficie-2);
+}
+
+/* ------------------------------------------------------------ venda finalizada */
+.fundo-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--espaco-6);
+  background: rgb(0 0 0 / 0.6);
+}
+
+.finalizada {
+  box-shadow: var(--sombra-flutuante);
+  text-align: center;
+}
+
+.finalizada header {
+  display: grid;
+  justify-items: center;
+  gap: var(--espaco-2);
+}
+
+.icone-ok {
+  width: 48px;
+  height: 48px;
+  color: var(--cor-sucesso);
+}
+
+.codigo-grande {
+  margin: 0;
+  font-family: var(--fonte-mono);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+  color: var(--cor-primaria-2);
+}
+
+.total-grande {
+  margin: 0;
+  font-size: var(--texto-3xl);
+  font-weight: var(--peso-extra);
+}
+
+.troco-grande {
+  padding: var(--espaco-3);
+  border-radius: var(--raio-p);
+  background: var(--cor-sucesso-fundo);
+  color: var(--cor-sucesso);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-forte);
+}
+
+.troco-grande dt {
+  color: inherit;
+}
+
+/* ------------------------------------------------------------ fechamento */
+.fechamento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-4);
+  padding: var(--espaco-4) var(--espaco-6);
+  align-items: start;
+}
+
+.coluna,
+.formulario,
+.escolha {
+  display: grid;
+  gap: var(--espaco-3);
+}
+
+.escolha label {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+}
+
+.relatorio .diferenca {
+  color: var(--cor-erro);
+  font-weight: var(--peso-forte);
+}
+
+.relatorio .diferenca.ok {
+  color: var(--cor-sucesso);
+}
+
+/* ------------------------------------------------------------ telas estreitas */
+@media (max-width: 900px) {
+  .venda,
+  .fechamento {
+    grid-template-columns: 1fr;
+  }
+
+  .carrinho {
+    grid-row: auto;
+  }
+}

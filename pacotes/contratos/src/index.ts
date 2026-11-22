@@ -8,3 +8,11 @@
 
 /** Nome do pacote (usado pelo teste do esqueleto, Passo 0.1). */
 export const PACOTE = 'contratos';
+
+export * from './leitura.ts';
+export * from './evento.ts';
+export * from './sinal-de-vida.ts';
+export * from './eventos/produto.ts';
+export * from './eventos/estoque.ts';
+export * from './eventos/venda.ts';
+export * from './eventos/caixa.ts';

@@ -5,6 +5,10 @@
   },
   "include": [
     "src/**/*.ts",
-    "testes/**/*.ts"
+    "testes/**/*.ts",
+    "electron/**/*.ts",
+    "scripts/**/*.ts",
+    "web/**/*.ts",
+    "web/**/*.tsx"
   ]
 }
