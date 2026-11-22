@@ -1,0 +1,364 @@
+/* Telas da nuvem (Central e ERP). Só tokens de pacotes/interface/src/tokens/tokens.css: nenhuma cor fixa.
+   O tema (escuro no Central, claro no ERP) é trocado no <html data-tema>. */
+
+label {
+  display: grid;
+  gap: var(--espaco-1);
+  font-size: var(--texto-sm);
+  color: var(--cor-texto-suave);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--toque-minimo);
+  padding: var(--espaco-2) var(--espaco-3);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-p);
+  background: var(--cor-superficie-2);
+  color: var(--cor-texto);
+  font: inherit;
+}
+
+fieldset {
+  display: grid;
+  gap: var(--espaco-3);
+  margin: 0;
+  padding: var(--espaco-4);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-m);
+}
+
+legend {
+  padding: 0 var(--espaco-2);
+  font-weight: var(--peso-medio);
+}
+
+h1 {
+  font-size: var(--texto-2xl);
+}
+
+.suave {
+  margin: 0;
+  color: var(--cor-texto-fraco);
+}
+
+.aviso {
+  margin: 0;
+  padding: var(--espaco-3);
+  border-radius: var(--raio-p);
+  background: var(--cor-erro-fundo);
+  color: var(--cor-erro);
+}
+
+.ok {
+  margin: 0;
+  padding: var(--espaco-3);
+  border-radius: var(--raio-p);
+  background: var(--cor-sucesso-fundo);
+  color: var(--cor-sucesso);
+}
+
+.botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.centro {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--espaco-6);
+}
+
+.painel {
+  display: grid;
+  gap: var(--espaco-4);
+  width: min(420px, 100%);
+  padding: var(--espaco-8);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-cartao);
+}
+
+.marca {
+  display: grid;
+}
+
+.marca strong {
+  font-weight: var(--peso-extra);
+  letter-spacing: 0.08em;
+}
+
+.marca strong span {
+  background: var(--gradiente-primario);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.marca small {
+  color: var(--cor-texto-fraco);
+  font-size: var(--texto-xs);
+}
+
+.abas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-1);
+  padding: var(--espaco-1);
+  border-radius: var(--raio-pilula);
+  background: var(--cor-superficie-2);
+}
+
+.abas button {
+  min-height: 36px;
+  border: 0;
+  border-radius: var(--raio-pilula);
+  background: transparent;
+  color: var(--cor-texto-suave);
+  font: inherit;
+  font-size: var(--texto-sm);
+  cursor: pointer;
+}
+
+.abas button[aria-selected='true'] {
+  background: var(--cor-primaria);
+  color: var(--cor-sobre-primaria);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-6);
+  padding: var(--espaco-3) var(--espaco-6);
+  background: var(--cor-lateral);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.acoes {
+  margin-left: auto;
+  display: flex;
+  gap: var(--espaco-2);
+}
+
+.conteudo {
+  display: grid;
+  gap: var(--espaco-4);
+  padding: var(--espaco-6);
+  align-content: start;
+}
+
+.duas-colunas {
+  display: grid;
+  gap: var(--espaco-4);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: start;
+}
+
+.grade-cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--espaco-4);
+}
+
+.em-breve {
+  color: var(--cor-texto-fraco);
+  font-size: var(--texto-xs);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.item {
+  display: grid;
+  gap: var(--espaco-1);
+  width: 100%;
+  padding: var(--espaco-3);
+  text-align: left;
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-m);
+  background: var(--cor-superficie-2);
+  color: var(--cor-texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+.item.selecionado,
+.item:hover {
+  border-color: var(--cor-primaria);
+}
+
+.item .nome {
+  font-weight: var(--peso-medio);
+}
+
+.item small {
+  color: var(--cor-texto-fraco);
+}
+
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-2);
+}
+
+.formulario {
+  display: grid;
+  gap: var(--espaco-4);
+}
+
+.dados {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--espaco-1) var(--espaco-4);
+  margin: 0 0 var(--espaco-4);
+}
+
+.dados dt {
+  color: var(--cor-texto-suave);
+}
+
+.dados dd {
+  margin: 0;
+}
+
+.coluna {
+  display: grid;
+  gap: var(--espaco-4);
+  align-content: start;
+}
+
+.grade-campos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.grade-campos .largo {
+  grid-column: 1 / -1;
+}
+
+.linha-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-3);
+  align-items: end;
+}
+
+.linha-form label {
+  flex: 1 1 140px;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--texto-sm);
+}
+
+.tabela th {
+  text-align: left;
+  color: var(--cor-texto-suave);
+  font-weight: var(--peso-medio);
+  padding: var(--espaco-2);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.tabela td {
+  padding: var(--espaco-2);
+  border-bottom: 1px solid var(--cor-borda);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela tbody tr {
+  cursor: pointer;
+}
+
+.tabela tr.selecionada td {
+  background: var(--cor-primaria-fundo);
+}
+
+.tabela .negativo {
+  color: var(--cor-erro);
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cor-primaria);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.subtitulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-size: var(--texto-base);
+}
+
+.subtitulo svg {
+  width: 18px;
+  height: 18px;
+}
+
+.numero-grande {
+  margin: 0;
+  font-size: var(--texto-3xl);
+  font-weight: var(--peso-extra);
+  font-variant-numeric: tabular-nums;
+}
+
+.codigo-grande {
+  margin: 0;
+  font-family: var(--fonte-mono);
+  font-size: var(--texto-2xl);
+  font-weight: var(--peso-forte);
+  letter-spacing: 0.1em;
+  color: var(--cor-primaria);
+}
+
+.codigo-ativacao {
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.campo-dia {
+  max-width: 220px;
+}
+
+.linha-dado {
+  display: contents;
+}
+
+.abas-topo {
+  width: min(380px, 100%);
+}
+
+.abas-topo button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espaco-2);
+}
+
+.abas-topo svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 900px) {
+  .duas-colunas {
+    grid-template-columns: 1fr;
+  }
+}
