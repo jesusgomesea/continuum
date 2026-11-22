@@ -89,12 +89,12 @@
 <circle cx="75" cy="75" r="62" class="anel-fundo"/>
 <circle cx="75" cy="75" r="62" class="anel-cor" id="anel-cor"/>
 <text x="75" y="76" text-anchor="middle" class="anel-valor" id="vendas-local">0</text>
-<text x="75" y="100" text-anchor="middle" class="anel-rotulo">vendas na loja</text>
+<text x="75" y="100" text-anchor="middle" class="anel-rotulo" id="anel-rotulo">vendas na loja</text>
 </svg>
 <ul class="checks">
 <li id="chk-servicos"><span class="ok"></span>Serviços ativos</li>
 <li id="chk-nuvem"><span class="ok"></span>Nuvem no ar</li>
-<li id="chk-fila"><span class="ok"></span>Sincronização em dia</li>
+<li id="chk-fila"><span class="ok"></span><span id="chk-fila-texto">Sincronização em dia</span></li>
 <li id="chk-gravado"><span class="ok"></span><span id="eventos-local">0 eventos gravados</span></li>
 </ul>
 </div>
@@ -118,7 +118,7 @@
 <span class="chip" id="chip-fila">—</span>
 </div>
 <div class="fila-corpo">
-<div><div class="grande" id="pendentes">0</div><div class="sub">eventos pendentes</div></div>
+<div><div class="grande" id="pendentes">0</div><div class="sub" id="pendentes-sub">eventos pendentes</div></div>
 <div class="colunas" id="colunas" aria-hidden="true"></div>
 </div>
 <div class="nota">fila local (outbox): nada se perde sem a nuvem</div>
@@ -235,7 +235,7 @@
 <div class="caixa">
 <div class="rotulo-lado">Fila (outbox)</div>
 <div class="grande" id="topo-pendentes">0</div>
-<div class="sub">eventos pendentes</div>
+<div class="sub" id="topo-pendentes-sub">eventos pendentes</div>
 </div>
 <div class="caixa">
 <div class="rotulo-lado">Cabo Loja LAB ↔ Nuvem</div>

@@ -329,8 +329,10 @@
       // Mesmo caminho da máquina de estados real, em ritmo de demonstração.
       if (l.estado === 'degradado' && agora - l.quedaEm > 2400) l.estado = 'offline';
       if (l.estado === 'recuperando' && agora - l.voltaEm > 2500) l.estado = 'sincronizando';
+      // O que a nuvem conhece da loja só avança enquanto há sinal.
+      if (l.estado !== 'offline' && l.estado !== 'degradado') l.vendasVistas = l.vendas;
       if (l.estado === 'offline' || l.estado === 'degradado' || l.estado === 'recuperando') {
-        l.fila += novas * 3; // venda + movimentação + itens
+        l.fila += novas * 3; // venda + movimentação + itens (fica na loja; a nuvem não vê)
       } else {
         l.fila += novas * 3;
         l.fila = Math.max(0, l.fila - Math.ceil(60 * dt));
@@ -355,13 +357,21 @@
     $('extras-rede').textContent = ok === sim.length ? `+${sim.length} lojas da rede · saudáveis` : `+${sim.length} lojas da rede · ${sim.length - ok} em contingência`;
   }
 
+  // Como a NUVEM vê cada loja: sem sinal, vendas congeladas na última sincronização e
+  // fila desconhecida (null = "pendente de sincronização").
   function dadosLoja(l) {
-    if (!l.real) return l;
+    if (!l.real) {
+      const semSinal = l.estado === 'offline' || l.estado === 'degradado';
+      return semSinal ? { ...l, vendas: l.vendasVistas ?? l.vendas, fila: null } : l;
+    }
     const s = ultimo;
-    const sync = s.local.pendentes === 0 && s.kryptonita.queda === null ? Date.now() : (dadosLoja.ultimaSyncLab ?? null);
-    if (sync) dadosLoja.ultimaSyncLab = sync;
-    return { ...l, estado: s.estado, vendas: s.local.vendas, fila: s.local.pendentes, sync, serie: porSegundo.slice(-60).map((p) => p.vendas) };
+    const v = s.visao;
+    return {
+      ...l, estado: s.estado, vendas: s.local.vendas, fila: v?.semSinal ? null : s.local.pendentes,
+      sync: v?.ultimaSync ?? null, serie: porSegundo.slice(-60).map((p) => p.vendas),
+    };
   }
+  const textoFila = (fila) => (fila === null ? 'pendente sync' : fmt.format(fila));
 
   function chipEstado(estado) {
     return `<span class="chip-estado" style="--c:${CORES[estado] ?? '#94a3b8'}">${NOMES[estado] ?? estado}</span>`;
@@ -379,7 +389,11 @@
     $('lj-cont').textContent = cont;
     $('lj-cont').className = `kpi-valor ${cont > 0 ? 'vermelho' : ''}`;
     $('lj-vendas').textContent = fmt.format(todas.reduce((a, l) => a + l.vendas, 0));
-    $('lj-fila').textContent = fmt.format(todas.reduce((a, l) => a + l.fila, 0));
+    const semSinal = todas.filter((l) => l.fila === null).length;
+    $('lj-fila').textContent = fmt.format(todas.reduce((a, l) => a + (l.fila ?? 0), 0));
+    $('lj-fila').nextElementSibling.textContent = semSinal
+      ? `${semSinal} ${semSinal === 1 ? 'loja sem sinal: fila pendente de sync' : 'lojas sem sinal: filas pendentes de sync'}`
+      : 'eventos aguardando envio';
     // Linhas fixas, só as células mudam: o clique não se perde na atualização de 500 ms.
     const corpo = $('lj-tabela').tBodies[0];
     if (corpo.rows.length !== todas.length) {
@@ -392,13 +406,13 @@
         `<b>${esc(l.nome)}</b><small>${esc(l.cidade)}</small>`,
         chipEstado(l.estado),
         fmt.format(l.vendas),
-        fmt.format(l.fila),
+        textoFila(l.fila),
         relativo(l.sync),
         l.real ? '<span class="tag-vivo">ao vivo</span>' : '<span class="selo-sim">simulação</span>',
       ];
       celulas.forEach((html, j) => { if (tr.cells[j].innerHTML !== html) tr.cells[j].innerHTML = html; });
       tr.cells[2].className = tr.cells[3].className = 'num';
-      if (l.fila > 0 && l.estado !== 'saudavel') tr.cells[3].classList.add('ambar');
+      if (l.fila === null || (l.fila > 0 && l.estado !== 'saudavel')) tr.cells[3].classList.add('ambar');
     });
 
     const l = todas.find((x) => x.id === lojaSel);
@@ -408,13 +422,16 @@
     $('lj-d-estado').textContent = NOMES[l.estado] ?? l.estado;
     $('lj-d-estado').style.color = CORES[l.estado];
     $('lj-d-pares').innerHTML = [
-      ['PDVs', l.real ? (pdv ? `1 · ${pdv.caixa} conectado` : 'nenhum PDV aberto') : l.pdvs], ['Vendas', fmt.format(l.vendas)], ['Fila', fmt.format(l.fila)], ['Última sync', relativo(l.sync)],
+      ['PDVs', l.real ? (pdv ? `1 · ${pdv.caixa} conectado` : 'nenhum PDV aberto') : l.pdvs], ['Vendas', fmt.format(l.vendas)], ['Fila', textoFila(l.fila)], ['Última sync', relativo(l.sync)],
       ['Banco local', 'SQLite + outbox'], ['Modo', l.real ? ultimo.modo : 'automatico'],
     ].map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
     const serie = l.serie.length ? l.serie : [0];
     const max = Math.max(1, ...serie);
     const pts = linha(serie.length > 1 ? serie : [0, 0], 300, 70, max, 4);
-    $('lj-d-graf').innerHTML = `${grade(300, 70, 2)}<polyline points="${pts} 300,70 0,70" class="g-area"/><polyline points="${pts}" class="g-linha"/>`;
+    // Sem sinal, a nuvem não recebe as vendas por segundo: o gráfico fica vazio até a loja sincronizar.
+    $('lj-d-graf').innerHTML = l.fila === null
+      ? grade(300, 70, 2)
+      : `${grade(300, 70, 2)}<polyline points="${pts} 300,70 0,70" class="g-area"/><polyline points="${pts}" class="g-linha"/>`;
     const fora = l.real ? ultimo.kryptonita.queda !== null : l.estado === 'degradado' || l.estado === 'offline';
     const acao = $('lj-d-acao');
     acao.textContent = l.real ? (fora ? 'Restaurar a nuvem (real)' : 'Derrubar a nuvem (real)') : fora ? 'Restaurar conexão' : 'Simular queda';
@@ -422,8 +439,8 @@
     if (!pode('nuvem')) acao.classList.add('sem-permissao');
     acao.disabled = !l.real && (l.estado === 'recuperando' || l.estado === 'sincronizando');
     $('lj-d-nota').textContent = l.real
-      ? 'Ação real: usa a mesma rota do Simulador (Kryptonita).'
-      : fora ? 'A loja segue vendendo; a fila cresce e será enviada na volta.' : 'Derruba só a conexão desta loja simulada.';
+      ? (l.fila === null ? 'Sem sinal: as vendas da loja chegam na próxima sincronização. ' : '') + 'Ação real: usa a mesma rota do Simulador (Kryptonita).'
+      : fora ? 'Sem sinal: a loja segue vendendo em contingência; as vendas chegam na próxima sincronização.' : 'Derruba só a conexão desta loja simulada.';
   }
 
   $('lj-tabela').addEventListener('click', (e) => {
@@ -492,7 +509,9 @@
     const fora = s.kryptonita.queda !== null;
     $('pp-op-v').textContent = fmt.format(s.local.vendas);
     $('pp-local-v').textContent = fmt.format(s.local.eventos);
-    $('pp-local-r').textContent = `eventos · ${fmt.format(s.local.pendentes)} pendentes`;
+    $('pp-local-r').textContent = s.visao?.semSinal
+      ? 'última posição conhecida · pendente sync'
+      : `eventos · ${fmt.format(s.local.pendentes)} pendentes`;
     $('pp-sync-v').textContent = NOMES[s.estado] ?? s.estado;
     $('pp-sync-v').style.color = CORES[s.estado];
     $('pp-sync-r').textContent = s.modo === 'automatico' ? 'modo automático' : s.modo === 'manual' ? 'modo manual' : 'local forçado';
@@ -502,7 +521,7 @@
     const enviando = !fora && s.local.pendentes > 0;
     $('pl-1').className = `liga ${s.geracao?.ativa ? 'fluindo' : ''}`;
     for (const id of ['pl-2', 'pl-3', 'pl-4']) $(id).className = `liga ${fora ? 'cortada' : enviando ? 'fluindo' : ''}`;
-    $('pp-local').classList.toggle('acumulando', fora && s.local.pendentes > 0);
+    $('pp-local').classList.toggle('acumulando', s.visao?.semSinal === true);
 
     desenharMaquina(s.estado);
     const modo = { automatico: ['Automático', 'verde'], manual: ['Manual', 'ambar'], 'local-forcado': ['Local forçado', 'vermelho'] }[s.modo] ?? [s.modo, ''];
@@ -690,7 +709,11 @@
   function mostrarRecuperacao() {
     const s = ultimo;
     const eps = mem.episodios;
-    if (s.nuvem) {
+    if (s.visao?.semSinal) {
+      $('rc-perda').textContent = 'pendente';
+      $('rc-perda').className = 'kpi-valor ambar';
+      $('rc-perda-sub').textContent = 'loja sem sinal: a conferência acontece quando ela reconectar';
+    } else if (s.nuvem) {
       const falta = s.local.eventos - s.nuvem.eventos;
       if (falta === 0) { $('rc-perda').textContent = '0 eventos'; $('rc-perda').className = 'kpi-valor verde'; $('rc-perda-sub').textContent = 'nuvem igual à loja, evento por evento'; }
       else { $('rc-perda').textContent = '0 perdidos'; $('rc-perda').className = 'kpi-valor ambar'; $('rc-perda-sub').textContent = `${fmt.format(falta)} eventos na outbox, aguardando envio`; }
@@ -781,12 +804,12 @@
     try {
       passo('base', 'rodando');
       await t.aguardar((s) => s.estado === 'saudavel' && s.kryptonita.queda === null && !s.geracao?.ativa, 60_000, 'estado SAUDÁVEL');
-      const v0 = ultimo.local.vendas;
+      const v0 = ultimo.localReal.vendas;
       passo('base', 'feito', `${fmt.format(v0)} vendas antes`);
 
       atual = 'vendas'; passo('vendas', 'rodando');
       await api('/api/vendas', { quantidade: qtd, ritmo });
-      await t.aguardar((s) => s.local.vendas > v0, 10_000, 'primeiras vendas');
+      await t.aguardar((s) => s.localReal.vendas > v0, 10_000, 'primeiras vendas');
       passo('vendas', 'feito', `${fmt.format(qtd)} a ${ritmo}/s`);
       await espera(1500);
       if (t.cancelado) throw new Cancelado();
@@ -794,7 +817,7 @@
       atual = 'derrubar'; passo('derrubar', 'rodando');
       await api('/api/nuvem/derrubar', { tipo });
       const tQueda = Date.now();
-      const vQueda = ultimo.local.vendas;
+      const vQueda = ultimo.localReal.vendas;
       passo('derrubar', 'feito', tipo === '503' ? 'erro 503' : 'conexão cortada');
 
       atual = 'offline'; passo('offline', 'rodando');
@@ -803,13 +826,13 @@
       passo('offline', 'feito', seg(r.deteccao));
 
       atual = 'continua'; passo('continua', 'rodando');
-      const vOff = ultimo.local.vendas;
+      const vOff = ultimo.localReal.vendas;
       // Espera a geração terminar (ou 8 s) para mostrar a fila crescendo.
       await Promise.race([t.aguardar((s) => !s.geracao?.ativa, 120_000, 'fim da geração'), espera(8000)]);
       if (t.cancelado) throw new Cancelado();
-      r.vendasQueda = ultimo.local.vendas - vQueda;
-      r.pico = ultimo.local.pendentes;
-      if (ultimo.local.vendas <= vOff && r.vendasQueda === 0) throw new Error('a loja não registrou vendas durante a queda');
+      r.vendasQueda = ultimo.localReal.vendas - vQueda;
+      r.pico = ultimo.localReal.pendentes;
+      if (ultimo.localReal.vendas <= vOff && r.vendasQueda === 0) throw new Error('a loja não registrou vendas durante a queda');
       passo('continua', 'feito', `${fmt.format(r.vendasQueda)} vendas offline · fila ${fmt.format(r.pico)}`);
 
       atual = 'restaurar'; passo('restaurar', 'rodando');
@@ -818,7 +841,7 @@
       passo('restaurar', 'feito');
 
       atual = 'saudavel'; passo('saudavel', 'rodando');
-      await t.aguardar((s) => s.estado === 'saudavel' && s.local.pendentes === 0 && !s.geracao?.ativa, 180_000, 'SAUDÁVEL com fila zerada');
+      await t.aguardar((s) => s.estado === 'saudavel' && s.localReal.pendentes === 0 && !s.geracao?.ativa, 180_000, 'SAUDÁVEL com fila zerada');
       r.recuperacao = Date.now() - tVolta;
       passo('saudavel', 'feito', seg(r.recuperacao));
 
@@ -826,9 +849,9 @@
       await espera(800);
       const s = ultimo;
       if (!s.nuvem) throw new Error('nuvem sem resposta na conferência');
-      const iguais = s.nuvem.eventos === s.local.eventos && s.nuvem.vendas === s.local.vendas;
-      if (!iguais) throw new Error(`divergência: loja ${s.local.eventos} eventos / nuvem ${s.nuvem.eventos}`);
-      passo('conferir', 'feito', `${fmt.format(s.local.vendas)} vendas e ${fmt.format(s.local.eventos)} eventos nos dois lados`);
+      const iguais = s.nuvem.eventos === s.localReal.eventos && s.nuvem.vendas === s.localReal.vendas;
+      if (!iguais) throw new Error(`divergência: loja ${s.localReal.eventos} eventos / nuvem ${s.nuvem.eventos}`);
+      passo('conferir', 'feito', `${fmt.format(s.localReal.vendas)} vendas e ${fmt.format(s.localReal.eventos)} eventos nos dois lados`);
       r.ok = true;
       r.total = Date.now() - r.inicio;
       $('rt-resultado').className = 'resultado bom';
@@ -913,7 +936,9 @@
       (eps.length === 0
         ? 'Nenhuma queda da nuvem foi medida neste período. '
         : `A nuvem caiu ${eps.length} ${eps.length === 1 ? 'vez' : 'vezes'}; a queda foi detectada em ${seg(media(eps.map((x) => x.deteccao)))} em média e o sistema voltou ao SAUDÁVEL em ${seg(media(eps.map((x) => x.recuperacao)))}. ${fmt.format(offline)} vendas foram feitas offline. `) +
-      (s.nuvem && s.nuvem.eventos === s.local.eventos ? 'Hoje a nuvem tem exatamente os mesmos eventos da loja: nenhuma perda. ' : `Há ${fmt.format(s.local.pendentes)} eventos na fila, guardados na loja. `) +
+      (s.visao?.semSinal
+        ? 'Neste momento a loja está sem sinal; as vendas do período chegam na próxima sincronização. '
+        : s.nuvem && s.nuvem.eventos === s.local.eventos ? 'Hoje a nuvem tem exatamente os mesmos eventos da loja: nenhuma perda. ' : `Há ${fmt.format(s.local.pendentes)} eventos na fila, guardados na loja. `) +
       (mem.testes.length ? `${testesOk} de ${mem.testes.length} testes de recuperação aprovados.` : '');
   }
 
@@ -989,9 +1014,13 @@
 
   // ================================================================ PDV (executável à parte)
   // O PDV grava no mesmo banco da loja; aqui só se lê o resumo dele, de outra porta.
-  let pdv = null; // { caixa, vendas, totalCentavos, ultima, fila, porta }
+  let pdv = null; // { caixa, vendas, totalCentavos, ultima, fila, porta } (lido do PDV, na loja)
   let pdvPorta = null;
   let ultimaVendaPdv = null;
+  // O Monitor fica na nuvem: com a loja sem sinal, ele não recebe as vendas do caixa.
+  // pdvVisto congela na última posição sincronizada; na volta, avisa quantas chegaram.
+  let pdvVisto = null;
+  let vendasPdvAntesDaQueda = null;
   async function consultarPdv(porta) {
     const r = await fetch(`http://127.0.0.1:${porta}/api/status`, { cache: 'no-store', signal: AbortSignal.timeout(700) });
     if (!r.ok) throw new Error(String(r.status));
@@ -1006,26 +1035,39 @@
       try { pdv = await consultarPdv(porta); pdvPorta = porta; break; } catch { /* próxima */ }
     }
     if (pdv === null) pdvPorta = null;
-    if (!antes && pdv) window.registrarAtividade?.(`PDV conectado: ${pdv.caixa}`, 'acao');
-    if (antes && !pdv) window.registrarAtividade?.('PDV fechado', 'acao');
+    const semSinal = ultimo?.visao?.semSinal === true;
+    if (!semSinal) {
+      if (!antes && pdv) window.registrarAtividade?.(`PDV conectado: ${pdv.caixa}`, 'acao');
+      if (antes && !pdv) window.registrarAtividade?.('PDV fechado', 'acao');
+      // A loja reconectou: as vendas feitas sem conexão chegam juntas.
+      if (pdv && vendasPdvAntesDaQueda !== null) {
+        const chegaram = pdv.vendas - vendasPdvAntesDaQueda;
+        if (chegaram > 0) window.registrarAtividade?.(`Chegaram ${fmt.format(chegaram)} vendas do ${pdv.caixa} feitas sem conexão`, 'sincronizando');
+      }
+      vendasPdvAntesDaQueda = null;
+      pdvVisto = pdv;
+    } else if (vendasPdvAntesDaQueda === null && pdvVisto) {
+      vendasPdvAntesDaQueda = pdvVisto.vendas;
+    }
     const numero = pdv?.ultima?.numero ?? null;
     if (pdv && numero !== null && numero !== ultimaVendaPdv) {
-      if (ultimaVendaPdv !== null) {
-        const fora = ultimo?.kryptonita.queda !== null && ultimo?.kryptonita.queda !== undefined;
-        window.registrarAtividade?.(`Venda ${pdv.ultima.codigo} · ${real(pdv.ultima.totalCentavos)} no ${pdv.caixa}${fora ? ' (offline, na fila)' : ''}`, fora ? 'offline' : 'acao');
+      // Venda a venda só com sinal; sem sinal, a nuvem não fica sabendo.
+      if (ultimaVendaPdv !== null && !semSinal) {
+        window.registrarAtividade?.(`Venda ${pdv.ultima.codigo} · ${real(pdv.ultima.totalCentavos)} no ${pdv.caixa}`, 'acao');
       }
       ultimaVendaPdv = numero;
     }
     const el = $('extras-pdv');
-    if (el) el.textContent = pdv ? `${pdv.caixa}: ${fmt.format(pdv.vendas)} vendas` : '';
-    mostrarMonitorPdv();
+    if (el) el.textContent = pdvVisto ? `${pdvVisto.caixa}: ${fmt.format(pdvVisto.vendas)} vendas${semSinal ? ' (última sync)' : ''}` : '';
+    mostrarMonitorPdv(semSinal);
   }
 
   const real = (c) => (c / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const FORMAS_PDV = { dinheiro: 'Dinheiro', cartao: 'Cartão', pix: 'Pix' };
-  function mostrarMonitorPdv() {
+  function mostrarMonitorPdv(semSinal = false) {
     const chipEl = $('mp-chip');
     if (!chipEl) return;
+    const pdv = pdvVisto; // o que a nuvem conhece do caixa
     if (!pdv) {
       chipEl.textContent = 'PDV fechado';
       chipEl.className = 'chip';
@@ -1033,8 +1075,8 @@
       $('mp-rodape').textContent = '';
       return;
     }
-    chipEl.textContent = `${pdv.caixa} conectado`;
-    chipEl.className = 'chip verde';
+    chipEl.textContent = semSinal ? `${pdv.caixa} · sem sinal` : `${pdv.caixa} conectado`;
+    chipEl.className = semSinal ? 'chip ambar' : 'chip verde';
     const html = (pdv.ultimas ?? []).length === 0
       ? '<li class="vazio">Nenhuma venda no caixa ainda.</li>'
       : pdv.ultimas.map((v) => `<li data-codigo="${esc(v.codigo)}" title="Clique para validar">
@@ -1043,7 +1085,9 @@
           <span class="chip-estado" style="--c:${v.situacao === 'nuvem' ? '#34d399' : '#fbbf24'}">${v.situacao === 'nuvem' ? 'na nuvem' : 'na fila'}</span></li>`).join('');
     const lista = $('mp-lista');
     if (lista.dataset.html !== html) { lista.innerHTML = html; lista.dataset.html = html; }
-    $('mp-rodape').textContent = `${fmt.format(pdv.vendas)} vendas · ${real(pdv.totalCentavos)} no caixa · fila da loja: ${fmt.format(pdv.fila)}`;
+    $('mp-rodape').textContent = semSinal
+      ? `Loja sem sinal · última posição recebida: ${fmt.format(pdv.vendas)} vendas · as vendas do caixa chegam na próxima sincronização`
+      : `${fmt.format(pdv.vendas)} vendas · ${real(pdv.totalCentavos)} no caixa · fila da loja: ${fmt.format(pdv.fila)}`;
   }
 
   async function validarCodigo(codigo) {
@@ -1059,6 +1103,13 @@
     try {
       const r = await fetch(`http://127.0.0.1:${pdv.porta}/api/pdv/consulta/${encodeURIComponent(codigo.trim())}`, { cache: 'no-store', signal: AbortSignal.timeout(3000) });
       const v = await r.json();
+      const semSinal = ultimo?.visao?.semSinal === true;
+      // Sem sinal, a nuvem só conhece as vendas que já chegaram até ela.
+      if (semSinal && (v.valida ? v.situacao !== 'nuvem' : /Não existe/.test(v.motivo))) {
+        caixaRes.className = 'mp-resultado';
+        caixaRes.innerHTML = `<b>⏳ Pendente de sincronização</b><span>A loja está sem sinal e esta venda ainda não chegou à nuvem. Ela será validada quando a loja sincronizar.</span>`;
+        return;
+      }
       if (!v.valida) {
         caixaRes.className = 'mp-resultado invalida';
         caixaRes.innerHTML = `<b>✕ Venda não validada</b><span>${esc(v.motivo)}</span>`;

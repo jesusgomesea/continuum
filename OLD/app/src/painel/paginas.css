@@ -276,3 +276,6 @@ label:has(> .sem-permissao) { cursor: not-allowed; }
 .mp-lista .mp-forma { display: none; }
 .mp-lista .chip-estado { grid-area: sit; justify-self: end; font-size: .66rem; padding: .05rem .45rem; }
 .mp-rodape { font-size: .72rem; color: var(--fraco); margin-top: .45rem; }
+
+/* A faixa de estado nunca alarga a página (o texto longo é cortado com reticências). */
+.faixa, .faixa-texto { min-width: 0; }

@@ -16,8 +16,8 @@ const NOMES = {
 const EXTRAS = { offline: 'Contingência ativa' };
 const DETALHES = {
   saudavel: 'Sistema estável · nuvem respondendo, o sync envia normalmente.',
-  degradado: 'Falhas detectadas, queda ainda não confirmada. O sync segue tentando.',
-  offline: 'Queda confirmada. A loja continua vendendo; a fila cresce e nada se perde.',
+  degradado: 'Sinal instável com a loja. Os números abaixo são os da última sincronização.',
+  offline: 'Sem sinal da loja. Ela segue vendendo em contingência; as vendas chegam na próxima sincronização.',
   recuperando: 'A nuvem voltou a responder. Confirmando a estabilidade antes de enviar.',
   sincronizando: 'Nuvem confirmada. Enviando a fila acumulada em lotes.',
   suspenso: 'Sync suspenso.',
@@ -33,6 +33,15 @@ const amostras = []; // pendentes, um valor por segundo
 let ultimaAmostra = 0;
 let eventosNuvemAntes = null; // para saber se a nuvem recebeu eventos desde a última consulta
 let caboOcupado = false;
+
+// Visão da nuvem. O painel faz o papel do Monitor, que fica na NUVEM: com a loja sem
+// conexão, a nuvem não tem como saber quantas vendas a loja está fazendo nem o tamanho
+// da fila dela. Então, na queda, o painel mostra a última posição sincronizada e
+// "pendente de sincronização"; os números reais aparecem quando a loja reconecta.
+// (A API do LAB roda na loja e conhece os números locais; o painel os esconde de propósito.)
+let retrato = null; // última posição da loja que a nuvem conhece: { vendas, eventos, pendentes, em }
+let semSinalDesde = null;
+const hora = (t) => new Date(t).toLocaleTimeString('pt-BR');
 
 // Episódio de queda medido pelo painel (relógio do navegador, precisão de ~0,5 s,
 // o intervalo da consulta). Começa ao derrubar a nuvem, termina ao voltar ao SAUDÁVEL.
@@ -120,7 +129,7 @@ function medirQueda(s, agora) {
   }
 }
 
-function mostrarTempos(s, agora) {
+function mostrarTempos(s, agora, v) {
   const e = episodio;
   const deteccao = $('tempo-deteccao');
   const recuperacao = $('tempo-recuperacao');
@@ -136,11 +145,30 @@ function mostrarTempos(s, agora) {
   else recuperacao.textContent = segundos(agora - e.volta);
   recuperacao.classList.toggle('medindo', e !== null && e.volta !== null && e.recuperacao === null);
 
-  // Vendas durante a queda: aparece a partir do OFFLINE e congela quando a nuvem volta.
+  // Vendas durante a queda: a nuvem só fica sabendo quando a loja reconecta e envia a fila.
   const visivel = e !== null && e.deteccao !== null;
   $('durante-queda').hidden = !visivel;
-  if (visivel) $('vendas-queda').textContent = numero.format(e.vendasDurante ?? s.local.vendas - e.vendasInicio);
+  if (visivel) {
+    $('vendas-queda').textContent = v.semSinal ? 'pendente' : numero.format(e.vendasDurante ?? s.local.vendas - e.vendasInicio);
+    $('vendas-queda').classList.toggle('medindo', v.semSinal);
+  }
 }
+
+/** O que a nuvem sabe da loja agora. Sem sinal: queda da conexão ou estado OFFLINE/DEGRADADO. */
+function visaoDaNuvem(s, agora) {
+  const semSinal = s.kryptonita.queda !== null || s.estado === 'offline' || s.estado === 'degradado';
+  if (!semSinal) {
+    retrato = { vendas: s.local.vendas, eventos: s.local.eventos, pendentes: s.local.pendentes, em: agora };
+    semSinalDesde = null;
+  } else {
+    // Painel aberto já com a loja sem sinal: a nuvem só conhece o que já recebeu.
+    retrato ??= { vendas: s.nuvem?.vendas ?? 0, eventos: s.nuvem?.eventos ?? 0, pendentes: 0, em: null };
+    semSinalDesde ??= agora;
+  }
+  return { semSinal, desde: semSinalDesde, loja: semSinal ? retrato : s.local, ultimaSync: retrato?.em ?? null };
+}
+
+const desdeTexto = (v) => (v.ultimaSync ? `última sincronização às ${hora(v.ultimaSync)}` : 'sem sinal desde que o painel abriu');
 
 function chip(id, texto, cor) {
   const el = $(id);
@@ -152,10 +180,10 @@ function marcar(id, situacao) {
   $(id).className = situacao; // '' (ok), 'falha' ou 'espera'
 }
 
-function mostrarFila(s, agora) {
-  if (agora - ultimaAmostra >= 1000) {
+function mostrarFila(loja, agora, v) {
+  if (agora - ultimaAmostra >= 1000 && !v.semSinal) {
     ultimaAmostra = agora;
-    amostras.push(s.local.pendentes);
+    amostras.push(loja.pendentes);
     if (amostras.length > COLUNAS) amostras.shift();
     const maior = Math.max(1, ...amostras);
     const colunas = $('colunas');
@@ -175,8 +203,11 @@ function mostrar(s) {
   $('faixa').dataset.estado = s.estado;
   $('estado').textContent = NOMES[s.estado] ?? s.estado;
   $('estado-extra').textContent = EXTRAS[s.estado] ?? '';
-  const contagem = s.falhasSeguidas > 0 ? ` (${s.falhasSeguidas} falhas seguidas)` : '';
-  $('estado-detalhe').textContent = (DETALHES[s.estado] ?? '') + contagem;
+  const v = visaoDaNuvem(s, agora);
+  const loja = v.loja;
+  $('estado-detalhe').textContent = v.semSinal
+    ? `${DETALHES[s.estado === 'saudavel' ? 'offline' : s.estado] ?? DETALHES.offline}${v.desde ? ` Desde ${hora(v.desde)}.` : ''}`
+    : (DETALHES[s.estado] ?? '');
   $('aviso-sync').hidden = processos;
 
   // A ação (queda ou volta da nuvem) entra na linha do tempo antes da mudança de estado que ela causa.
@@ -186,11 +217,14 @@ function mostrar(s) {
     ultimoEstado = s.estado;
   }
   medirQueda(s, agora);
-  mostrarTempos(s, agora);
+  mostrarTempos(s, agora, v);
 
-  // Status do sistema: a loja do LAB.
-  $('vendas-local').textContent = numero.format(s.local.vendas);
-  $('eventos-local').textContent = `${numero.format(s.local.eventos)} eventos gravados`;
+  // Status do sistema: a loja do LAB, como a nuvem a vê.
+  $('vendas-local').textContent = numero.format(loja.vendas);
+  $('anel-rotulo').textContent = v.semSinal ? 'na última sync' : 'vendas na loja';
+  $('eventos-local').textContent = v.semSinal
+    ? `${numero.format(loja.eventos)} eventos até a última sync`
+    : `${numero.format(loja.eventos)} eventos gravados`;
   $('anel-cor').classList.toggle('fora', s.estado === 'offline');
   $('anel-cor').classList.toggle('alerta', s.estado !== 'offline' && s.estado !== 'saudavel');
   if (!processos) chip('chip-status', 'Atenção', 'vermelho');
@@ -198,7 +232,8 @@ function mostrar(s) {
   else chip('chip-status', 'Online', 'verde');
   marcar('chk-servicos', processos ? '' : 'falha');
   marcar('chk-nuvem', queda === null && s.nuvem !== null ? '' : 'falha');
-  marcar('chk-fila', s.local.pendentes === 0 ? '' : 'espera');
+  marcar('chk-fila', v.semSinal || loja.pendentes > 0 ? 'espera' : '');
+  $('chk-fila-texto').textContent = v.semSinal ? 'Pendente de sincronização' : loja.pendentes > 0 ? 'Sincronizando' : 'Sincronização em dia';
   marcar('chk-gravado', '');
 
   // Sincronização: o que a nuvem já tem.
@@ -210,22 +245,25 @@ function mostrar(s) {
   } else {
     $('vendas-nuvem').textContent = numero.format(s.nuvem.vendas);
     $('eventos-nuvem').textContent = `${numero.format(s.nuvem.eventos)} eventos recebidos`;
-    const pct = s.local.eventos === 0 ? 100 : Math.min(100, Math.floor((s.nuvem.eventos / s.local.eventos) * 100));
+    const pct = loja.eventos === 0 ? 100 : Math.min(100, Math.floor((s.nuvem.eventos / loja.eventos) * 100));
     $('barra-sync').style.width = `${pct}%`;
-    $('pct-sync').textContent = `${pct}% dos eventos da loja na nuvem`;
+    $('pct-sync').textContent = v.semSinal
+      ? `loja sem sinal · ${desdeTexto(v)}`
+      : `${pct}% dos eventos da loja na nuvem`;
   }
   if (s.estado === 'offline' || s.estado === 'degradado') chip('chip-sync', 'Pausada', 'ambar');
   else if (s.estado === 'recuperando') chip('chip-sync', 'Aguardando', 'ambar');
-  else if (s.estado === 'sincronizando' || s.local.pendentes > 0) chip('chip-sync', 'Em andamento', 'azul');
+  else if (s.estado === 'sincronizando' || loja.pendentes > 0) chip('chip-sync', 'Em andamento', 'azul');
   else chip('chip-sync', 'Em dia', 'verde');
 
-  // Fila de operações
-  $('pendentes').textContent = numero.format(s.local.pendentes);
-  $('pendentes').classList.toggle('crescendo', queda !== null && s.local.pendentes > 0);
-  if (s.local.pendentes === 0) chip('chip-fila', 'Vazia', 'verde');
-  else if (queda !== null) chip('chip-fila', 'Acumulando', 'ambar');
-  else chip('chip-fila', 'Enviando', 'azul');
-  mostrarFila(s, agora);
+  // Fila de operações: o tamanho da fila da loja só chega à nuvem quando a loja reconecta.
+  $('pendentes').textContent = v.semSinal ? '—' : numero.format(loja.pendentes);
+  $('pendentes').classList.toggle('crescendo', false);
+  $('pendentes-sub').textContent = v.semSinal ? 'pendente de sincronização: a fila fica na loja' : 'eventos pendentes';
+  if (v.semSinal) chip('chip-fila', 'Pendente sync', 'ambar');
+  else if (loja.pendentes === 0) chip('chip-fila', 'Vazia', 'verde');
+  else chip('chip-fila', 'Recebendo', 'azul');
+  mostrarFila(loja, agora, v);
 
   // Simulador
   const g = s.geracao;
@@ -255,12 +293,14 @@ function mostrar(s) {
     p === null ? 'Nenhuma transição proposta.' : `Proposta: ${NOMES[p.de] ?? p.de} → ${NOMES[p.para] ?? p.para} (${p.motivo})`;
   $('confirmar').disabled = p === null;
 
-  mostrarTopologia(s);
-  document.dispatchEvent(new CustomEvent('continuum:situacao', { detail: s }));
+  mostrarTopologia(s, v);
+  // As outras telas recebem a mesma visão: "local" é o que a nuvem conhece; "localReal",
+  // os números da própria loja (só para ferramentas do laboratório, como o teste de recuperação).
+  document.dispatchEvent(new CustomEvent('continuum:situacao', { detail: { ...s, local: loja, localReal: s.local, visao: v } }));
 }
 
 // Topologia: o cabo Loja LAB ↔ Nuvem e os dois nós dele mostram o LAB real.
-function mostrarTopologia(s) {
+function mostrarTopologia(s, v) {
   const queda = s.kryptonita.queda;
   const enviou = s.nuvem !== null && eventosNuvemAntes !== null && s.nuvem.eventos > eventosNuvemAntes;
   eventosNuvemAntes = s.nuvem === null ? null : s.nuvem.eventos;
@@ -275,12 +315,12 @@ function mostrarTopologia(s) {
   $('no-nuvem').classList.toggle('fora', queda !== null);
   $('topo-nuvem').textContent =
     queda !== null ? 'fora do ar' : s.nuvem === null ? 'sem resposta' : `${numero.format(s.nuvem.vendas)} vendas`;
-  $('topo-loja').textContent = `${numero.format(s.local.vendas)} vendas`;
+  $('topo-loja').textContent = v.semSinal ? 'sem sinal · pendente sync' : `${numero.format(v.loja.vendas)} vendas`;
   $('topo-estado').dataset.estado = s.estado;
   $('topo-estado').textContent = NOMES[s.estado] ?? s.estado;
   $('topo-extra').textContent = EXTRAS[s.estado] ?? '';
-  $('topo-pendentes').textContent = numero.format(s.local.pendentes);
-  $('topo-pendentes').classList.toggle('crescendo', queda !== null && s.local.pendentes > 0);
+  $('topo-pendentes').textContent = v.semSinal ? '—' : numero.format(v.loja.pendentes);
+  $('topo-pendentes-sub').textContent = v.semSinal ? `pendente de sincronização · ${desdeTexto(v)}` : 'eventos pendentes';
 }
 
 // Clique no cabo real: as mesmas rotas do Simulador (com X-Continuum).
