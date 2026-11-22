@@ -13,17 +13,20 @@ import {
   EstoqueInsuficienteError,
   ProdutoNaoEncontradoError,
 } from '@continuum/dominio';
-import type { PedidoDeVenda } from '@continuum/dominio';
-import type { Caixa } from '../caixa.ts';
+import type { Caixa, PedidoDoCaixa } from '../caixa.ts';
 import { OperacaoDeCaixaError } from '../caixa.ts';
+import { comprovanteHtml } from '../comprovante.ts';
+import type { Sincronizacao } from '../sincronizacao.ts';
 
 export interface Resposta {
   status: number;
   corpo: unknown;
+  /** 'html' para páginas (o comprovante); sem isso, JSON. */
+  tipo?: 'html';
 }
 
 /** O retrato do caixa que a tela precisa para se desenhar. */
-export function estadoDoCaixa(caixa: Caixa) {
+export function estadoDoCaixa(caixa: Caixa, sincronizacao: Sincronizacao | null = null) {
   return {
     identidade: caixa.identidade(),
     sessao: caixa.sessaoAberta() ?? null,
@@ -31,6 +34,8 @@ export function estadoDoCaixa(caixa: Caixa) {
     filaPendente: caixa.fila.contarPendentes(),
     catalogo: caixa.catalogo(),
     ultimasVendas: caixa.ultimasVendas(10),
+    /** Situação do envio ao agente (null quando o caixa roda sem agente, como nos testes). */
+    sincronizacao: sincronizacao?.resumo() ?? null,
   };
 }
 
@@ -54,10 +59,14 @@ function respostaDeErro(erro: unknown): Resposta {
   throw erro; // erro inesperado: não é recusa de regra, é defeito, e precisa aparecer
 }
 
-export function criarApi(caixa: Caixa) {
-  const ok = (corpo: unknown = estadoDoCaixa(caixa)): Resposta => ({ status: 200, corpo });
+/** A sincronização pode nascer depois (só liga quando o caixa é ativado): por isso pode vir como função. */
+export type FonteDaSincronizacao = Sincronizacao | null | (() => Sincronizacao | null);
 
-  function rotear(metodo: string, caminho: string, corpo: unknown): Resposta {
+export function criarApi(caixa: Caixa, sincronizacao: FonteDaSincronizacao = null) {
+  const estado = () => estadoDoCaixa(caixa, typeof sincronizacao === 'function' ? sincronizacao() : sincronizacao);
+  const ok = (corpo: unknown = estado()): Resposta => ({ status: 200, corpo });
+
+  function rotear(metodo: string, caminho: string, consulta: string, corpo: unknown): Resposta {
     const d = objeto(corpo);
     if (metodo === 'GET' && caminho === '/api/estado') return ok();
 
@@ -73,16 +82,16 @@ export function criarApi(caixa: Caixa) {
     }
     if (metodo === 'GET' && caminho === '/api/caixa/relatorio') return ok(caixa.relatorioParcial());
     if (metodo === 'POST' && caminho === '/api/caixa/fechar') {
-      return ok({ relatorio: caixa.fecharCaixa(numero(d['contadoCentavos'])), estado: estadoDoCaixa(caixa) });
+      return ok({ relatorio: caixa.fecharCaixa(numero(d['contadoCentavos'])), estado: estado() });
     }
 
     if (metodo === 'POST' && caminho === '/api/vendas') {
-      const { venda, alertasEstoque } = caixa.registrarVenda(d as unknown as PedidoDeVenda);
-      return ok({ venda, alertasEstoque, estado: estadoDoCaixa(caixa) });
+      const { venda, alertasEstoque, repetida } = caixa.registrarVenda(d as unknown as PedidoDoCaixa);
+      return ok({ venda, alertasEstoque, repetida, estado: estado() });
     }
     const cancelar = /^\/api\/vendas\/([^/]+)\/cancelar$/.exec(caminho);
     if (metodo === 'POST' && cancelar !== null) {
-      caixa.cancelarVenda(decodeURIComponent(cancelar[1] ?? ''), texto(d['motivo']), texto(d['autorizadoPor']));
+      caixa.cancelarVenda(decodeURIComponent(cancelar[1] ?? ''), texto(d['motivo']), texto(d['autorizadoPor']), texto(d['pin']));
       return ok();
     }
     const buscar = /^\/api\/vendas\/([^/]+)$/.exec(caminho);
@@ -92,13 +101,22 @@ export function criarApi(caixa: Caixa) {
         ? { status: 404, corpo: { erro: 'NaoEncontrada', mensagem: 'Venda não encontrada neste caixa.' } }
         : ok(achada);
     }
+    // Comprovante (página para imprimir): /comprovante/CODIGO?reimpressao=1&imprimir=1
+    const comprovante = /^\/comprovante\/([^/]+)$/.exec(caminho);
+    if (metodo === 'GET' && comprovante !== null) {
+      const busca = new URLSearchParams(consulta);
+      const dados = caixa.dadosDoComprovante(decodeURIComponent(comprovante[1] ?? ''), busca.get('reimpressao') === '1');
+      if (dados === undefined) return { status: 404, tipo: 'html', corpo: '<p>Venda não encontrada neste caixa.</p>' };
+      return { status: 200, tipo: 'html', corpo: comprovanteHtml(dados, caixa.configuracaoDoComprovante(), busca.get('imprimir') === '1') };
+    }
     return { status: 404, corpo: { erro: 'RotaDesconhecida', mensagem: `${metodo} ${caminho} não existe` } };
   }
 
   return {
     tratar(metodo: string, caminho: string, corpo?: unknown): Resposta {
       try {
-        return rotear(metodo.toUpperCase(), caminho.split('?')[0] ?? caminho, corpo);
+        const [rota = caminho, consulta = ''] = caminho.split('?');
+        return rotear(metodo.toUpperCase(), rota, consulta, corpo);
       } catch (erro) {
         return respostaDeErro(erro);
       }

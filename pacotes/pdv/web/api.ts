@@ -1,7 +1,7 @@
 // Cliente da API do caixa, usado pelas telas. Cada função é um pedido ao servidor local do PDV.
-import type { PedidoDeVenda, Venda, AlertaEstoque } from '@continuum/dominio';
+import type { Venda, AlertaEstoque } from '@continuum/dominio';
 import type { EstadoDoCaixa } from '../src/servidor/api.ts';
-import type { Relatorio } from '../src/caixa.ts';
+import type { PedidoDoCaixa, Relatorio } from '../src/caixa.ts';
 
 export type { EstadoDoCaixa, Relatorio };
 
@@ -31,10 +31,10 @@ async function pedir<T>(metodo: 'GET' | 'POST', caminho: string, corpo?: unknown
 export const api = {
   estado: () => pedir<EstadoDoCaixa>('GET', '/api/estado'),
   abrirCaixa: (operador: string, fundoCentavos: number) => pedir<EstadoDoCaixa>('POST', '/api/caixa/abrir', { operador, fundoCentavos }),
-  vender: (pedido: PedidoDeVenda) =>
-    pedir<{ venda: Venda; alertasEstoque: AlertaEstoque[]; estado: EstadoDoCaixa }>('POST', '/api/vendas', pedido),
-  cancelar: (codigo: string, motivo: string, autorizadoPor: string) =>
-    pedir<EstadoDoCaixa>('POST', `/api/vendas/${encodeURIComponent(codigo)}/cancelar`, { motivo, autorizadoPor }),
+  vender: (pedido: PedidoDoCaixa) =>
+    pedir<{ venda: Venda; alertasEstoque: AlertaEstoque[]; repetida: boolean; estado: EstadoDoCaixa }>('POST', '/api/vendas', pedido),
+  cancelar: (codigo: string, motivo: string, autorizadoPor: string, pin: string) =>
+    pedir<EstadoDoCaixa>('POST', `/api/vendas/${encodeURIComponent(codigo)}/cancelar`, { motivo, autorizadoPor, pin }),
   movimentar: (tipo: 'SANGRIA' | 'SUPRIMENTO', valorCentavos: number, motivo: string) =>
     pedir<EstadoDoCaixa>('POST', '/api/caixa/movimentar', { tipo, valorCentavos, motivo }),
   relatorio: () => pedir<Relatorio>('GET', '/api/caixa/relatorio'),

@@ -30,7 +30,16 @@ export function prepararDemonstracao(caixa: Caixa): boolean {
     // ainda não ativado: segue
   }
   caixa.ativar({ dispositivoId: gerarId(), lojaId: gerarId(), nomeReduzido: 'MERCBAIRRO', numeroCaixa: 1 });
-  caixa.aplicarParametros({ versao: 1, regraEstoque: 'bloquear', limiteDescontoPct: 10 });
+  caixa.aplicarParametros({
+    versao: 1,
+    regraEstoque: 'bloquear',
+    limiteDescontoPct: 10,
+    comprovante: {
+      cabecalho: ['Mercadinho do Bairro', 'Loja de demonstração do Continuum', 'Rua Exemplo, 123 · Centro'],
+      rodape: 'Obrigado pela preferência!',
+      largura: 80,
+    },
+  });
   for (const p of CATALOGO_DEMO) {
     const produtoId = gerarId();
     caixa.receberProduto({ produtoId, nome: p.nome, precoCentavos: p.precoCentavos, unidade: 'un', ean: p.ean, version: 1 });

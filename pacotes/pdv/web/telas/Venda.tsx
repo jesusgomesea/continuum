@@ -4,7 +4,7 @@
 import type { FormaPagamento, Venda } from '@continuum/dominio';
 import { Botao, Cartao } from '@continuum/interface';
 import { Calculator, Check, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { api } from '../api.ts';
 import type { EstadoDoCaixa } from '../api.ts';
@@ -32,7 +32,9 @@ export function TelaDeVenda({ estado, aoAtualizar, aoIrParaFechamento }: Props) 
   const [documento, setDocumento] = useState('');
   const [pagamentos, setPagamentos] = useState<{ forma: FormaPagamento; valorCentavos: number }[]>([]);
   const [valorPagamento, setValorPagamento] = useState('');
-  const [supervisor, setSupervisor] = useState(false);
+  const [pin, setPin] = useState('');
+  // Chave desta tentativa de venda: se o clique for duplo ou a resposta se perder, o caixa não grava duas vezes.
+  const chave = useRef<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [finalizada, setFinalizada] = useState<Venda | null>(null);
@@ -93,7 +95,8 @@ export function TelaDeVenda({ estado, aoAtualizar, aoIrParaFechamento }: Props) 
     setDocumento('');
     setPagamentos([]);
     setValorPagamento('');
-    setSupervisor(false);
+    setPin('');
+    chave.current = null;
     setAviso(null);
   }
 
@@ -103,8 +106,9 @@ export function TelaDeVenda({ estado, aoAtualizar, aoIrParaFechamento }: Props) 
       return;
     }
     setEnviando(true);
+    chave.current ??= crypto.randomUUID();
     api
-      .vender({ itens: linhas, pagamentos, descontoCentavos, documentoCliente: documento, autorizadoPorSupervisor: supervisor })
+      .vender({ itens: linhas, pagamentos, descontoCentavos, documentoCliente: documento, chave: chave.current, ...(pin === '' ? {} : { pinSupervisor: pin }) })
       .then(({ venda, estado: novo }) => {
         aoAtualizar(novo);
         setFinalizada(venda);
@@ -180,8 +184,8 @@ export function TelaDeVenda({ estado, aoAtualizar, aoIrParaFechamento }: Props) 
           </div>
           {passaDoLimite && (
             <label className="supervisor">
-              <input type="checkbox" checked={supervisor} onChange={(e) => setSupervisor(e.target.checked)} />
-              Desconto acima de {estado.parametros.limiteDescontoPct}%: autorizado pelo supervisor
+              Desconto acima de {estado.parametros.limiteDescontoPct}%: PIN do supervisor
+              <input type="password" inputMode="numeric" autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value)} />
             </label>
           )}
 

@@ -4,6 +4,7 @@
 // à fila (Passo 1.2). Toda operação grava os dados e os eventos na MESMA transação: ou tudo, ou nada.
 // Sucessor de OLD/trabalho-em-andamento/caixa-v3-operacao-de-caixa.js.
 import {
+  AutorizacaoNecessariaError,
   cancelarVenda as regraDeCancelamento,
   DadosInvalidosError,
   exigirTexto,
@@ -16,6 +17,11 @@ import type { ProdutoCriado } from '@continuum/contratos';
 import { abrirBanco, aplicarMigracoes, Fila } from '@continuum/sync';
 import type { BancoSqlite, Linha } from '@continuum/sync';
 import { MIGRACOES_CAIXA } from './banco/migracoes.ts';
+import { COMPROVANTE_PADRAO } from './comprovante.ts';
+import { pinConfere } from './pin.ts';
+import { parametrosDaAlteracao } from './descida.ts';
+import type { Alteracao } from './descida.ts';
+import type { ConfiguracaoComprovante, DadosDoComprovante } from './comprovante.ts';
 
 /** O caixa não está pronto para a operação pedida (não ativado, caixa fechado, já aberto...). */
 export class OperacaoDeCaixaError extends Error {
@@ -33,7 +39,18 @@ export interface ParametrosDoCliente {
   versao: number;
   regraEstoque: RegraEstoque;
   limiteDescontoPct: number;
+  /** Cabeçalho, rodapé e largura da bobina do comprovante (opcional: sem ele, o padrão). */
+  comprovante?: ConfiguracaoComprovante;
+  /** Hash do PIN do supervisor (pin.ts). Sem ele, vale o PIN padrão 1234. */
+  pinSupervisorHash?: string;
 }
+
+/**
+ * O pedido como chega das telas. A autorização do supervisor NÃO vem pronta da tela: o caixa confere
+ * o PIN. A `chave` identifica a tentativa de venda: a mesma chave de novo (clique duplo, resposta
+ * perdida) devolve a mesma venda, sem gravar outra.
+ */
+export type PedidoDoCaixa = Omit<PedidoDeVenda, 'autorizadoPorSupervisor'> & { chave?: string; pinSupervisor?: string };
 
 export interface Sessao {
   id: string;
@@ -57,6 +74,19 @@ export interface Relatorio {
   contadoCentavos: number | null;
   /** contado − esperado: negativo = falta dinheiro; positivo = sobra. */
   diferencaCentavos: number | null;
+}
+
+/** O que a nuvem devolve ao caixa na ativação (pacotes/nuvem/src/dispositivos.ts). */
+export interface PacoteDeAtivacao {
+  dispositivoId: string;
+  clienteId: string;
+  tipo: 'pdv' | 'agente';
+  numeroCaixa: number | null;
+  credencial: string;
+  loja: { id: string; nomeReduzido: string; nome: string };
+  parametros: { versao: number; regraEstoque: RegraEstoque; limiteDescontoPct: number; comprovante: Partial<ConfiguracaoComprovante> };
+  catalogo: { produtoId: string; nome: string; precoCentavos: number; unidade: 'un' | 'kg' | 'l'; ean: string | null; version: number; saldoNaLoja: number }[];
+  cursorDescida: number;
 }
 
 export interface ProdutoDoCatalogo {
@@ -122,6 +152,76 @@ export class Caixa {
       }
       this.#banco.rodar('INSERT INTO sequencia_venda (numero_caixa, ultimo_numero) VALUES (?, 0)', identidade.numeroCaixa);
     });
+  }
+
+  /**
+   * Aplica o pacote que a nuvem devolve na ativação (Passo 3.1): quem é este caixa, a credencial, os
+   * parâmetros do cliente, o catálogo e o saldo da loja. O saldo entra como "saldo da loja na ativação"
+   * SEM evento na fila: ele já está na nuvem (subir de novo contaria em dobro).
+   */
+  aplicarAtivacao(pacote: PacoteDeAtivacao, urlNuvem: string): void {
+    if (pacote.tipo !== 'pdv' || pacote.numeroCaixa === null) throw new OperacaoDeCaixaError('Este código é de um agente da loja, não de um caixa.');
+    this.#banco.transacao(() => {
+      this.ativar({ dispositivoId: pacote.dispositivoId, lojaId: pacote.loja.id, nomeReduzido: pacote.loja.nomeReduzido, numeroCaixa: pacote.numeroCaixa as number });
+      for (const [chave, valor] of [['credencial', pacote.credencial], ['urlNuvem', urlNuvem], ['clienteId', pacote.clienteId], ['nomeLoja', pacote.loja.nome]] as const) {
+        this.#banco.rodar('INSERT INTO config_local (chave, valor) VALUES (?, ?)', chave, valor);
+      }
+      this.aplicarParametros({
+        versao: pacote.parametros.versao,
+        regraEstoque: pacote.parametros.regraEstoque,
+        limiteDescontoPct: pacote.parametros.limiteDescontoPct,
+        comprovante: { ...COMPROVANTE_PADRAO, ...pacote.parametros.comprovante },
+      });
+      for (const p of pacote.catalogo) {
+        this.receberProduto({ produtoId: p.produtoId, nome: p.nome, precoCentavos: p.precoCentavos, unidade: p.unidade, ean: p.ean, version: p.version });
+        if (p.saldoNaLoja !== 0) {
+          this.#banco.rodar(
+            `INSERT INTO movimentacoes (id, loja_id, produto_id, tipo, quantidade, venda_id, motivo, dispositivo_id, ocorrido_em)
+             VALUES (?, ?, ?, 'AJUSTE', ?, NULL, 'saldo da loja na ativação', ?, ?)`,
+            this.#gerarId(), pacote.loja.id, p.produtoId, p.saldoNaLoja, pacote.dispositivoId, this.#agora(),
+          );
+        }
+      }
+      this.#banco.rodar('INSERT INTO cursor_descida (unica, ultima_seq) VALUES (1, ?) ON CONFLICT (unica) DO UPDATE SET ultima_seq = excluded.ultima_seq', pacote.cursorDescida);
+    });
+  }
+
+  /** Até onde a descida (Passo 3.3) já foi aplicada neste caixa. */
+  cursorDescida(): number {
+    return Number(this.#banco.consultarUma('SELECT ultima_seq FROM cursor_descida WHERE unica = 1')?.['ultima_seq'] ?? 0);
+  }
+
+  /** Aplica uma mudança que desceu da nuvem e avança o cursor, numa transação só. */
+  aplicarAlteracao(a: Alteracao): void {
+    this.#banco.transacao(() => {
+      if (a.seq <= this.cursorDescida()) return; // já aplicada
+      if (a.entidade === 'produto') {
+        const d = a.dados;
+        this.receberProduto({
+          produtoId: String(d['produtoId']),
+          nome: String(d['nome']),
+          precoCentavos: Number(d['precoCentavos']),
+          unidade: (['un', 'kg', 'l'].includes(String(d['unidade'])) ? String(d['unidade']) : 'un') as 'un' | 'kg' | 'l',
+          ean: d['ean'] === null || d['ean'] === undefined ? null : String(d['ean']),
+          version: Number(d['version'] ?? a.versao),
+        });
+      } else if (a.entidade === 'parametros') {
+        const p = parametrosDaAlteracao(a);
+        const atual = this.parametros();
+        // Mantém o que a alteração não trouxe (ex.: o PIN do supervisor e o comprovante anterior).
+        this.aplicarParametros({ ...atual, ...p, comprovante: { ...COMPROVANTE_PADRAO, ...(atual.comprovante ?? {}), ...(p.comprovante ?? {}) } });
+      }
+      this.#banco.rodar(
+        'INSERT INTO cursor_descida (unica, ultima_seq) VALUES (1, ?) ON CONFLICT (unica) DO UPDATE SET ultima_seq = excluded.ultima_seq',
+        a.seq,
+      );
+    });
+  }
+
+  /** Lê um valor guardado na configuração local (ex.: a credencial, o endereço da nuvem). */
+  configuracao(chave: string): string | null {
+    const l = this.#banco.consultarUma('SELECT valor FROM config_local WHERE chave = ?', chave);
+    return l === undefined ? null : String(l['valor']);
   }
 
   identidade(): Identidade {
@@ -280,11 +380,21 @@ export class Caixa {
    * Registra a venda numa transação só: venda, itens, pagamentos, baixas de estoque e os eventos na fila.
    * Qualquer recusa (estoque, desconto, pagamento) desfaz tudo, inclusive o número da venda.
    */
-  registrarVenda(pedido: PedidoDeVenda): { venda: Venda; alertasEstoque: readonly AlertaEstoque[] } {
+  registrarVenda(pedido: PedidoDoCaixa): { venda: Venda; alertasEstoque: readonly AlertaEstoque[]; repetida: boolean } {
     const identidade = this.identidade();
     const parametros = this.parametros();
+    const { chave, pinSupervisor, ...resto } = pedido;
+    if (chave !== undefined && !/^[A-Za-z0-9-]{8,64}$/.test(chave)) {
+      throw new DadosInvalidosError('chave: de 8 a 64 letras, números ou hífen');
+    }
     return this.#banco.transacao(() => {
+      if (chave !== undefined) {
+        const ja = this.#banco.consultarUma('SELECT v.codigo FROM chaves_venda k JOIN vendas v ON v.id = k.venda_id WHERE k.chave = ?', chave);
+        const achada = ja === undefined ? undefined : this.buscarVenda(String(ja['codigo']));
+        if (achada !== undefined) return { venda: achada.venda, alertasEstoque: [], repetida: true };
+      }
       const sessao = this.#exigirSessao();
+      const autorizado = pinConfere(pinSupervisor, parametros.pinSupervisorHash);
       const ids = [...new Set(pedido.itens.map((i) => i.produtoId))];
       const precos = new Map<string, number>();
       const saldos = new Map<string, number>();
@@ -296,7 +406,9 @@ export class Caixa {
       const seq = this.#banco.consultarUma('SELECT ultimo_numero FROM sequencia_venda WHERE numero_caixa = ?', identidade.numeroCaixa);
       const numero = Number(seq?.['ultimo_numero']) + 1;
 
-      const { venda, baixas, alertasEstoque } = montarVenda(pedido, {
+      let montada: ReturnType<typeof montarVenda>;
+      try {
+        montada = montarVenda({ ...resto, autorizadoPorSupervisor: autorizado }, {
         lojaId: identidade.lojaId,
         sessaoId: sessao.id,
         nomeReduzido: identidade.nomeReduzido,
@@ -308,6 +420,13 @@ export class Caixa {
         limiteDescontoPct: parametros.limiteDescontoPct,
         gerarId: this.#gerarId,
       });
+      } catch (erro) {
+        if (erro instanceof AutorizacaoNecessariaError && pinSupervisor !== undefined && pinSupervisor !== '') {
+          throw new AutorizacaoNecessariaError('PIN do supervisor não confere.');
+        }
+        throw erro;
+      }
+      const { venda, baixas, alertasEstoque } = montada;
 
       const agora = this.#agora();
       this.#banco.rodar('UPDATE sequencia_venda SET ultimo_numero = ? WHERE numero_caixa = ?', numero, identidade.numeroCaixa);
@@ -330,7 +449,8 @@ export class Caixa {
       for (const p of venda.pagamentos) {
         this.#banco.rodar('INSERT INTO pagamentos (id, venda_id, forma, valor_centavos) VALUES (?, ?, ?, ?)', p.id, venda.vendaId, p.forma, p.valorCentavos);
       }
-      return { venda, alertasEstoque };
+      if (chave !== undefined) this.#banco.rodar('INSERT INTO chaves_venda (chave, venda_id) VALUES (?, ?)', chave, venda.vendaId);
+      return { venda, alertasEstoque, repetida: false };
     });
   }
 
@@ -369,10 +489,44 @@ export class Caixa {
     return { venda, cancelada };
   }
 
+  /** Tudo o que o comprovante precisa: a venda, os nomes dos produtos, quando, quem e se foi cancelada. */
+  dadosDoComprovante(codigo: string, reimpressao: boolean): DadosDoComprovante | undefined {
+    const achada = this.buscarVenda(codigo);
+    if (achada === undefined) return undefined;
+    const extra = this.#banco.consultarUma(
+      'SELECT v.ocorrido_em, s.operador FROM vendas v JOIN sessoes_caixa s ON s.id = v.sessao_id WHERE v.id = ?',
+      achada.venda.vendaId,
+    );
+    const nomes = new Map(
+      this.#banco
+        .consultar('SELECT p.id, p.nome FROM produtos p JOIN itens_venda i ON i.produto_id = p.id WHERE i.venda_id = ?', achada.venda.vendaId)
+        .map((l) => [String(l['id']), String(l['nome'])]),
+    );
+    return {
+      venda: achada.venda,
+      nomes,
+      ocorridoEm: String(extra?.['ocorrido_em']),
+      operador: String(extra?.['operador']),
+      numeroCaixa: this.identidade().numeroCaixa,
+      cancelada: achada.cancelada,
+      reimpressao,
+    };
+  }
+
+  /** Configuração do comprovante vinda dos parâmetros do cliente, ou a padrão. */
+  configuracaoDoComprovante(): ConfiguracaoComprovante {
+    return this.parametros().comprovante ?? COMPROVANTE_PADRAO;
+  }
+
   /** Cancela a venda pelo código: a venda fica como estava; o estoque volta por ESTORNO. */
-  cancelarVenda(codigo: string, motivo: string, autorizadoPor: string): void {
+  cancelarVenda(codigo: string, motivo: string, autorizadoPor: string, pinSupervisor?: string): void {
     this.#banco.transacao(() => {
       const sessao = this.#exigirSessao();
+      if (!pinConfere(pinSupervisor, this.parametros().pinSupervisorHash)) {
+        throw new AutorizacaoNecessariaError(
+          pinSupervisor === undefined || pinSupervisor === '' ? 'Cancelamento exige o PIN do supervisor.' : 'PIN do supervisor não confere.',
+        );
+      }
       const achada = this.buscarVenda(codigo);
       if (achada === undefined) throw new DadosInvalidosError(`A venda ${codigo.trim().toUpperCase()} não é deste caixa.`);
       const { cancelamento, estornos } = regraDeCancelamento(achada.venda, {

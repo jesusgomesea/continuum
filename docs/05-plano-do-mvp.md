@@ -62,33 +62,33 @@ coração do Local First e já dá uma demonstração completa sem internet; dep
 | 🟡 **1.2 A fila (outbox)** (feito, aguardando validação do lead) | Pacote `sync`: a fila em SQLite e as migrações do banco, reconstruídas do OLD | Teste provando "venda e evento juntos, ou nenhum" | Testes passando |
 | 🟡 **1.3 Banco e serviços do caixa** (feito, aguardando validação do lead) | `caixa.db` com as tabelas do documento `04`; serviços de abrir caixa, registrar venda, fechar caixa | Um roteiro de teste fazendo um dia de caixa completo | Testes passando |
 | 🟡 **1.4 Telas do PDV** (feito, aguardando validação do lead) | Telas em React (rodando primeiro no navegador): abrir caixa, venda, "Venda finalizada", fechamento | O PDV novo no navegador, com a cara do Continuum | Você consegue fazer uma venda e fechar o caixa |
-| **1.5 PDV instalado e comprovante** | Empacoto no Electron; impressão do comprovante (58 e 80 mm) e reimpressão | O programa instalado abrindo e imprimindo (ou mostrando na tela, sem impressora) | Venda impressa com os dados do comércio |
+| 🟡 **1.5 PDV instalado e comprovante** (feito, aguardando validação do lead) | Empacoto no Electron; impressão do comprovante (58 e 80 mm) e reimpressão | O programa instalado abrindo e imprimindo (ou mostrando na tela, sem impressora) | Venda impressa com os dados do comércio |
 
 ## Fase 2 · Nuvem: ERP e Central
 
 | Passo | O que faço | O que você vai ver | Pronto quando |
 |---|---|---|---|
-| **2.1 Servidor e banco da nuvem** | Pacote `nuvem`: servidor Node, PostgreSQL (o portátil do OLD em desenvolvimento), migrações e isolamento por cliente (Row Level Security) | Um teste provando que um cliente **não** enxerga dados de outro | Testes passando |
-| **2.2 Login e perfis** | Login da Equipe Continuum (Central) e de dono e operador (ERP) | A tela de login funcionando | Cada perfil vê só o que pode |
-| **2.3 Central: clientes** | Cadastrar cliente (CNPJ ou CPF, segmento, domínio) e parametrizar o ERP dele (UC01 e UC02) | O Central criando um cliente e o ERP dele aparecendo | Cliente de teste criado |
-| **2.4 ERP: loja e produtos** | Configurar loja e comprovante, cadastrar produtos, entrada e ajuste de estoque, kardex (UC10 a UC15) | O ERP com a marca do cliente de teste | Produtos cadastrados com estoque |
-| **2.5 ERP: caixa e relatórios** | Ativar caixa por código (UC17), relatório de vendas básico (UC18), validar venda pelo código (UC19) | Código de ativação gerado; relatório vazio pronto para receber vendas | Telas funcionando |
+| 🟡 **2.1 Servidor e banco da nuvem** (feito em 22/11, aguardando validação do lead) | Pacote `nuvem`: servidor Node, PostgreSQL (o portátil do OLD em desenvolvimento), migrações e isolamento por cliente (Row Level Security) | Um teste provando que um cliente **não** enxerga dados de outro | Testes passando |
+| 🟡 **2.2 Login e perfis** (feito em 22/11, aguardando validação do lead) | Login da Equipe Continuum (Central) e de dono e operador (ERP) | A tela de login funcionando | Cada perfil vê só o que pode |
+| 🟡 **2.3 Central: clientes** (feito em 22/11, aguardando validação do lead) | Cadastrar cliente (CNPJ ou CPF, segmento, domínio) e parametrizar o ERP dele (UC01 e UC02) | O Central criando um cliente e o ERP dele aparecendo | Cliente de teste criado |
+| 🟡 **2.4 ERP: loja e produtos** (feito em 22/11, aguardando validação do lead) | Configurar loja e comprovante, cadastrar produtos, entrada e ajuste de estoque, kardex (UC10 a UC15) | O ERP com a marca do cliente de teste | Produtos cadastrados com estoque |
+| 🟡 **2.5 ERP: caixa e relatórios** (feito em 22/11, aguardando validação do lead) | Ativar caixa por código (UC17), relatório de vendas básico (UC18), validar venda pelo código (UC19) | Código de ativação gerado; relatório vazio pronto para receber vendas | Telas funcionando |
 
 ## Fase 3 · Ligar tudo
 
 | Passo | O que faço | O que você vai ver | Pronto quando |
 |---|---|---|---|
-| **3.1 Ativação do PDV** | O PDV instalado recebe o código, ganha credencial e baixa loja, parâmetros e catálogo | Um caixa novo ativado e vendendo os produtos do ERP | Venda com produto cadastrado no ERP |
-| **3.2 Subida (vendas → nuvem)** | O Sync Engine do OLD, reconstruído: a fila do caixa vai para a nuvem em ordem, sem duplicar | A venda feita no PDV aparecendo no relatório do ERP | Nuvem igual ao caixa, venda a venda |
-| **3.3 Descida (preços → caixa)** | Fila de alterações e cursor: preço mudado no ERP chega ao PDV | Preço alterado no ERP aparecendo no caixa | Alteração recebida em segundos |
-| **3.4 Monitor ao vivo** | Sinal de vida do PDV e painel do Central em tempo real (a essência do Continuum) | O Central mostrando o caixa vendendo, a fila e o estado | Queda de internet aparece no Central |
-| **3.5 Executáveis para o teste de conexão** (pedido do lead, 21/11/2026) | Um executável por aplicação, sem instalar Node nem banco: `pdv-continuum.exe` (Electron), `agente-continuum.exe` (serviço da loja) e `nuvem-continuum.exe` (ERP + Central rodando no computador, com o PostgreSQL portátil do OLD). Todos com o Node e o banco empacotados (nada baixado da internet) | Os três programas abertos: o PDV ativado pelo código do ERP, vendendo, a venda chegando ao ERP e o caixa aparecendo no Central | O lead testa sozinho a conexão entre as aplicações, inclusive derrubando a rede |
+| 🟡 **3.1 Ativação do PDV** (feito em 22/11, aguardando validação do lead) | O PDV instalado recebe o código, ganha credencial e baixa loja, parâmetros e catálogo | Um caixa novo ativado e vendendo os produtos do ERP | Venda com produto cadastrado no ERP |
+| 🟡 **3.2 Subida (vendas → nuvem)** (22/11: caixa → agente e caixa → nuvem no formato MEI feitos; falta o agente repassar à nuvem) | O Sync Engine do OLD, reconstruído: a fila do caixa vai para a nuvem em ordem, sem duplicar | A venda feita no PDV aparecendo no relatório do ERP | Nuvem igual ao caixa, venda a venda |
+| 🟡 **3.3 Descida (preços → caixa)** (22/11: feito no formato MEI, caixa ↔ nuvem; falta passar pelo agente) | Fila de alterações e cursor: preço mudado no ERP chega ao PDV | Preço alterado no ERP aparecendo no caixa | Alteração recebida em segundos |
+| 🟡 **3.4 Monitor ao vivo** (feito em 22/11 para os caixas MEI; aguardando validação do lead) | Sinal de vida do PDV e painel do Central em tempo real (a essência do Continuum) | O Central mostrando o caixa vendendo, a fila e o estado | Queda de internet aparece no Central |
+| 🟡 **3.5 Executáveis para o teste de conexão** (pedido do lead, 21/11/2026; os três gerados em 22/11, nuvem ↔ PDV conferidos) | Um executável por aplicação, sem instalar Node nem banco: `pdv-continuum.exe` (Electron), `agente-continuum.exe` (serviço da loja) e `nuvem-continuum.exe` (ERP + Central rodando no computador, com o PostgreSQL portátil do OLD). Todos com o Node e o banco empacotados (nada baixado da internet) | Os três programas abertos: o PDV ativado pelo código do ERP, vendendo, a venda chegando ao ERP e o caixa aparecendo no Central | O lead testa sozinho a conexão entre as aplicações, inclusive derrubando a rede |
 
 ## Fase 4 · Piloto
 
 | Passo | O que faço | O que você vai ver | Pronto quando |
 |---|---|---|---|
-| **4.1 Teste de queda** | O simulador de falhas (Kryptonita) do OLD aplicado ao sistema novo: derruba a internet, vende, volta, confere | O relatório "nada se perdeu", como no LAB | Teste automático aprovado |
+| 🟡 **4.1 Teste de queda** (22/11: caixa → agente e caixa → nuvem aprovados; falta agente → nuvem) | O simulador de falhas (Kryptonita) do OLD aplicado ao sistema novo: derruba a internet, vende, volta, confere | O relatório "nada se perdeu", como no LAB | Teste automático aprovado |
 | **4.2 Instalador e hospedagem** | Instalador do PDV e publicação da nuvem na opção A (camadas gratuitas) | Um endereço de verdade para o ERP e o Central | Acessível pela internet |
 | **4.3 Primeiro cliente** | Cadastro e treinamento de um cliente piloto, com manual simples | Uma loja real usando o Continuum | Um dia completo de vendas sem perda |
 

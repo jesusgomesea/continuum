@@ -2,9 +2,9 @@
 // os pagamentos e o troco em destaque (o que o operador precisa devolver ao cliente).
 import type { Venda } from '@continuum/dominio';
 import { Botao } from '@continuum/interface';
-import { CircleCheck } from 'lucide-react';
+import { CircleCheck, Printer } from 'lucide-react';
 import { useEffect } from 'react';
-import { NOMES_FORMA, reais } from '../comum.tsx';
+import { abrirComprovante, NOMES_FORMA, reais } from '../comum.tsx';
 
 export function VendaFinalizada({ venda, aoFechar }: { venda: Venda; aoFechar: () => void }) {
   // Enter ou Esc fecham e voltam para uma nova venda.
@@ -46,9 +46,14 @@ export function VendaFinalizada({ venda, aoFechar }: { venda: Venda; aoFechar: (
           </div>
         </dl>
         <p className="suave">Gravada no caixa. Segue para a loja e a nuvem pela fila, mesmo sem internet agora.</p>
-        <Botao largo onClick={aoFechar} autoFocus>
-          Nova venda (Enter)
-        </Botao>
+        <div className="botoes">
+          <Botao variante="secundario" icone={<Printer aria-hidden="true" />} onClick={() => abrirComprovante(venda.codigo, { imprimir: true })}>
+            Imprimir comprovante
+          </Botao>
+          <Botao onClick={aoFechar} autoFocus>
+            Nova venda (Enter)
+          </Botao>
+        </div>
       </section>
     </div>
   );

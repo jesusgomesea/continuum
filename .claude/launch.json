@@ -4,8 +4,46 @@
     {
       "name": "pdv",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "pdv", "--", "--open", "false", "--strictPort"],
+      "runtimeArgs": [
+        "run",
+        "pdv",
+        "--",
+        "--open",
+        "false",
+        "--strictPort"
+      ],
       "port": 5174
+    },
+    {
+      "name": "agente",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "agente"
+      ],
+      "port": 5180
+    },
+    {
+      "name": "erp",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "erp",
+        "--",
+        "--open",
+        "false",
+        "--strictPort"
+      ],
+      "port": 5175
+    },
+    {
+      "name": "pdv-novo",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": [
+        "/c",
+        "set CONTINUUM_PDV_BANCO=dados/pdv-novo/caixa.db&& npm run pdv -- --open false --port 5176 --strictPort"
+      ],
+      "port": 5176
     }
   ]
 }

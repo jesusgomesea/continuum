@@ -11,3 +11,7 @@ export const PACOTE = 'pdv';
 
 export * from './banco/migracoes.ts';
 export * from './caixa.ts';
+export * from './sincronizacao.ts';
+export * from './pin.ts';
+export * from './ativacao.ts';
+export * from './descida.ts';

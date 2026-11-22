@@ -19,15 +19,29 @@ function apiDoCaixa(): Plugin {
       const { abrirBancoDoCaixa, Caixa } = await import('./src/caixa.ts');
       const { criarApi } = await import('./src/servidor/api.ts');
       const { middlewareDaApi } = await import('./src/servidor/http.ts');
-      const { prepararDemonstracao } = await import('./src/servidor/demonstracao.ts');
+      const { ligarSincronizacao, destinoDaFila } = await import('./src/sincronizacao.ts');
+      const { caixaAtivado, middlewareDeAtivacao } = await import('./src/ativacao.ts');
+      type Sync = ReturnType<typeof ligarSincronizacao>;
 
       mkdirSync(path.dirname(arquivoDoBanco), { recursive: true });
       const banco = abrirBancoDoCaixa(arquivoDoBanco);
       const caixa = new Caixa(banco);
-      if (prepararDemonstracao(caixa)) servidor.config.logger.info('  Caixa novo: ativado com dados de demonstração.');
       servidor.config.logger.info(`  Banco do caixa: ${arquivoDoBanco}`);
-      servidor.middlewares.use(middlewareDaApi(criarApi(caixa)));
-      servidor.httpServer?.once('close', () => banco.fechar());
+      // A fila vai para o agente da loja (.\dev agente), mas só depois que o caixa for ativado.
+      // Sem agente no ar, o caixa vende do mesmo jeito.
+      let sincronizacao: Sync | null = null;
+      const ligar = () => {
+        const { destino, credencial } = destinoDaFila(caixa, process.env['CONTINUUM_AGENTE_URL'] ?? null);
+        sincronizacao ??= ligarSincronizacao(caixa, destino, credencial === undefined ? {} : { credencial });
+        servidor.config.logger.info(`  A fila vai para: ${destino}${credencial === undefined ? '' : ' (nuvem, formato MEI)'}`);
+      };
+      if (caixaAtivado(caixa)) ligar();
+      else servidor.config.logger.info('  Caixa novo: abra o PDV e ative com o código do ERP (ou use o modo demonstração).');
+      servidor.middlewares.use(middlewareDeAtivacao(caixa, ligar));
+      servidor.middlewares.use(middlewareDaApi(criarApi(caixa, () => sincronizacao)));
+      servidor.httpServer?.once('close', () => {
+        void (sincronizacao?.parar() ?? Promise.resolve()).finally(() => banco.fechar());
+      });
     },
   };
 }

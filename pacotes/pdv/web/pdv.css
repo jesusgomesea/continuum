@@ -82,6 +82,10 @@ input:not([type='checkbox']):not([type='radio']) {
   gap: var(--espaco-2);
 }
 
+.faixa {
+  padding: var(--espaco-3) var(--espaco-6) 0;
+}
+
 /* ------------------------------------------------------------ telas centralizadas */
 .centro {
   min-height: calc(100vh - 80px);
@@ -229,9 +233,6 @@ input:not([type='checkbox']):not([type='radio']) {
 }
 
 .supervisor {
-  display: flex;
-  align-items: center;
-  gap: var(--espaco-2);
   color: var(--cor-atencao);
 }
 
@@ -299,9 +300,13 @@ input:not([type='checkbox']):not([type='radio']) {
 
 .linha-venda {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
   gap: var(--espaco-3);
+}
+
+.finalizada .botoes {
+  justify-content: center;
 }
 
 .codigo {

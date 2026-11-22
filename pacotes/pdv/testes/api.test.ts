@@ -41,7 +41,7 @@ describe('API do caixa', () => {
     expect(estado().ultimasVendas[0]?.codigo).toBe(venda.codigo);
 
     expect(api.tratar('GET', `/api/vendas/${venda.codigo.toLowerCase()}`).status).toBe(200);
-    expect(api.tratar('POST', `/api/vendas/${venda.codigo}/cancelar`, { motivo: 'Desistiu', autorizadoPor: 'Carla' }).status).toBe(200);
+    expect(api.tratar('POST', `/api/vendas/${venda.codigo}/cancelar`, { motivo: 'Desistiu', autorizadoPor: 'Carla', pin: '1234' }).status).toBe(200);
     expect(estado().ultimasVendas[0]?.cancelada).toBe(true);
 
     expect(api.tratar('POST', '/api/caixa/movimentar', { tipo: 'SANGRIA', valorCentavos: 5000, motivo: 'Depósito' }).status).toBe(200);
@@ -76,5 +76,54 @@ describe('API do caixa', () => {
     expect(vender({ itens: [{ produtoId: '019a0b7c-0000-7000-8000-0000000000ff', quantidade: 1 }], pagamentos: [] }).status).toBe(404);
     expect(api.tratar('POST', '/api/caixa/abrir', { operador: 'Bia', fundoCentavos: 0 }).status).toBe(409);
     expect(api.tratar('GET', '/api/nada').status).toBe(404);
+  });
+});
+
+describe('comprovante', () => {
+  it('mostra loja, itens, pagamentos, troco e código; marca reimpressão e cancelamento', () => {
+    const { api, estado } = preparar();
+    api.tratar('POST', '/api/caixa/abrir', { operador: 'Ana', fundoCentavos: 0 });
+    const cafe = estado().catalogo.find((p) => p.nome.startsWith('Café'));
+    const r = api.tratar('POST', '/api/vendas', {
+      itens: [{ produtoId: cafe?.id, quantidade: 2 }],
+      pagamentos: [{ forma: 'dinheiro', valorCentavos: 5000 }],
+      documentoCliente: '529.982.247-25',
+    });
+    const { codigo } = (r.corpo as { venda: { codigo: string } }).venda;
+
+    const pagina = api.tratar('GET', `/comprovante/${codigo}`);
+    expect(pagina).toMatchObject({ status: 200, tipo: 'html' });
+    const html = String(pagina.corpo);
+    expect(html).toContain('Mercadinho do Bairro');
+    expect(html).toContain('Café 500 g');
+    expect(html).toContain('R$ 37,80');
+    expect(html).toContain('R$ 12,20'); // troco
+    expect(html).toContain('***.982.247-**'); // CPF mascarado
+    expect(html).toContain(codigo);
+    expect(html).toContain('size: 80mm');
+    expect(html).not.toContain('REIMPRESSÃO');
+
+    expect(String(api.tratar('GET', `/comprovante/${codigo}?reimpressao=1`).corpo)).toContain('REIMPRESSÃO');
+    expect(String(api.tratar('GET', `/comprovante/${codigo}?imprimir=1`).corpo)).toContain('window.print()');
+    api.tratar('POST', `/api/vendas/${codigo}/cancelar`, { motivo: 'Desistiu', autorizadoPor: 'Carla', pin: '1234' });
+    expect(String(api.tratar('GET', `/comprovante/${codigo}`).corpo)).toContain('VENDA CANCELADA');
+    expect(api.tratar('GET', '/comprovante/MERCBAIRRO-19999-ABCD').status).toBe(404);
+  });
+
+  it('bobina de 58 mm quando o cliente configura assim', () => {
+    const { caixa, api, estado } = preparar();
+    caixa.aplicarParametros({
+      versao: 2,
+      regraEstoque: 'bloquear',
+      limiteDescontoPct: 10,
+      comprovante: { cabecalho: ['Padaria Teste'], rodape: 'Volte sempre', largura: 58 },
+    });
+    api.tratar('POST', '/api/caixa/abrir', { operador: 'Ana', fundoCentavos: 0 });
+    const p = estado().catalogo[0];
+    const r = api.tratar('POST', '/api/vendas', { itens: [{ produtoId: p?.id, quantidade: 1 }], pagamentos: [{ forma: 'pix', valorCentavos: p?.precoCentavos }] });
+    const html = String(api.tratar('GET', `/comprovante/${(r.corpo as { venda: { codigo: string } }).venda.codigo}`).corpo);
+    expect(html).toContain('size: 58mm');
+    expect(html).toContain('Padaria Teste');
+    expect(html).toContain('Volte sempre');
   });
 });

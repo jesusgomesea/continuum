@@ -64,7 +64,7 @@ describe('telas do PDV', () => {
     expect(screen.getByTestId('diferenca').textContent).toBe('R$ 0,00');
   });
 
-  it('desconto acima do limite: o caixa recusa e a tela mostra o motivo', async () => {
+  it('desconto acima do limite: o caixa recusa sem o PIN do supervisor e aceita com ele', async () => {
     render(<App />);
     await screen.findByRole('heading', { name: 'Abrir caixa' });
     digitar(/Operador/, 'Ana');
@@ -72,14 +72,38 @@ describe('telas do PDV', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Café 500 g/ }));
     digitar(/Desconto no total/, '5,00');
-    expect(screen.getByText(/autorizado pelo supervisor/)).toBeTruthy();
+    expect(screen.getByLabelText(/PIN do supervisor/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pix' }));
     fireEvent.click(screen.getByRole('button', { name: /Finalizar venda/ }));
     expect((await screen.findByRole('alert')).textContent).toMatch(/exige autorização do supervisor/);
 
-    // Com a autorização marcada, a mesma venda passa.
-    fireEvent.click(screen.getByRole('checkbox'));
+    // PIN errado: recusado. Com o PIN do supervisor (padrão 1234), a mesma venda passa.
+    digitar(/PIN do supervisor/, '0000');
+    fireEvent.click(screen.getByRole('button', { name: /Finalizar venda/ }));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/PIN do supervisor não confere/));
+    digitar(/PIN do supervisor/, '1234');
     fireEvent.click(screen.getByRole('button', { name: /Finalizar venda/ }));
     expect(await screen.findByRole('dialog')).toBeTruthy();
+  });
+});
+
+describe('caixa novo (Passo 3.1)', () => {
+  it('mostra a tela de ativação; o modo demonstração ativa e leva para abrir o caixa', async () => {
+    const caixa = new Caixa(abrirBancoDoCaixa(':memory:')); // sem preparar: caixa novo
+    const api = criarApi(caixa);
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (url === '/api/demonstracao') {
+        prepararDemonstracao(caixa);
+        return new Response('{"ok":true}', { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      const corpo = typeof init?.body === 'string' ? (JSON.parse(init.body) as unknown) : undefined;
+      const r = api.tratar(init?.method ?? 'GET', url, corpo);
+      return new Response(JSON.stringify(r.corpo), { status: r.status, headers: { 'Content-Type': 'application/json' } });
+    });
+    render(<App />);
+    await screen.findByRole('heading', { name: 'Ativar este caixa' });
+    expect(screen.getByLabelText(/Código de ativação/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /modo demonstração/ }));
+    await screen.findByRole('heading', { name: 'Abrir caixa' });
   });
 });

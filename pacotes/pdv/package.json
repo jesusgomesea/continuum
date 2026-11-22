@@ -10,10 +10,14 @@
   "dependencies": {
     "@continuum/contratos": "*",
     "@continuum/dominio": "*",
-    "@continuum/sync": "*",
     "@continuum/interface": "*",
+    "@continuum/sync": "*",
     "lucide-react": "^1.77.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.18.0"
   }
 }
