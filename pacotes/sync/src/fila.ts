@@ -110,6 +110,11 @@ export class Fila {
       .map(lerLinha);
   }
 
+  /** Eventos a partir da seq indicada, enviados ou não (para reenviar o que o destino perdeu). */
+  aPartirDe(seq: number, limite: number): EventoNaFila[] {
+    return this.#banco.consultar('SELECT * FROM outbox WHERE seq >= ? ORDER BY seq LIMIT ?', seq, limite).map(lerLinha);
+  }
+
   /** Todos os eventos guardados, em ordem (para conferência e testes). */
   todos(): EventoNaFila[] {
     return this.#banco.consultar('SELECT * FROM outbox ORDER BY seq').map(lerLinha);
