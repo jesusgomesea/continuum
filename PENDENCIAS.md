@@ -17,6 +17,7 @@
 | **Passo 0.1** · Esqueleto do monorepo | `pacotes/*` | ✅ Concluído |
 | **Passo 0.2** · Identidade visual e vitrine | `pacotes/interface` | 🟡 **Feito, aguardando aprovação do visual** |
 | **Passo 0.3** · Regras básicas | `pacotes/dominio` | 🟡 **Feito, aguardando validação** (dinheiro, CPF/CNPJ/EAN, código da venda; 28 testes novos) |
+| **Passo 0.4** · Contratos dos eventos | `pacotes/contratos` | 🟡 **Feito, aguardando validação** (8 tipos de evento + sinal de vida; 37 testes novos) |
 
 ## 2. Próximo passo
 
@@ -29,9 +30,20 @@
    - `src/codigo-venda.ts`: `MERCBAIRRO-10123-ABCD` (caixa 1 a 9 no primeiro dígito, número com pelo
      menos 4 dígitos que cresce além de 9999, conferência = 4 últimos caracteres do UUID v7).
    - Conferir: `.\dev testar` (34 passando) e ler os testes em `pacotes/dominio/testes/`.
-3. **Passo 0.4 · O "idioma" do sistema** (pacote `contratos`): formato e validação de cada evento.
+3. **Validar o Passo 0.4** (pacote `contratos`), feito em 21/11/2026:
+   - `src/evento.ts`: a casca de todo evento (`id`, `seq`, `tipo`, `versao`, `ocorridoEm`, `dados`) e o
+     cardápio dos 8 tipos, todos na versão 1: `produto.criado`, `produto.alterado`,
+     `estoque.movimentacao-registrada`, `venda.registrada`, `venda.cancelada`, `caixa.aberto`,
+     `caixa.movimentado`, `caixa.fechado`. `lerEvento` lança erro; `conferirEvento` devolve o problema (para a tela);
+   - `src/eventos/*.ts`: os dados de cada tipo. A venda confere as contas (bruto = soma dos itens,
+     líquido = bruto − desconto, pagamentos − troco = líquido, troco só em dinheiro) e o código com o id;
+   - `src/sinal-de-vida.ts`: o heartbeat (estado, fila, caixa aberto, última venda, versão), fora da fila;
+   - `src/leitura.ts`: os leitores pequenos, reconstruídos de `OLD/app/dist/cloud-api/leitura.js`.
+   - Decisões para revisar: campo desconhecido é recusado (a versão nova do formato é o caminho para
+     mudar); o tipo `DEVOLUCAO` do OLD saiu (devolução vira `ESTORNO`); quantidade vendida é inteira.
+   - Conferir: `.\dev testar` (71 passando) e ler `pacotes/contratos/testes/`.
+4. **Fase 1 · Passo 1.1 Regras de venda e estoque** (pacote `dominio`), conforme `docs/05-plano-do-mvp.md`.
    Seguir o ritual da seção 5: explicar antes, esperar o OK.
-4. Depois: a Fase 1 (PDV sozinho), conforme `docs/05-plano-do-mvp.md`.
 
 ## 3. Como rodar
 
@@ -40,7 +52,7 @@ O projeto exige **Node 26**.
 ```powershell
 .\dev instalar    # baixa as ferramentas (npm install)
 .\dev versao      # deve mostrar v26.x
-.\dev testar      # testes automáticos (hoje: 34 passando)
+.\dev testar      # testes automáticos (hoje: 71 passando)
 .\dev verificar   # tipos do TypeScript (hoje: nenhum erro)
 .\dev vitrine     # vitrine da interface em http://localhost:5173
 ```
