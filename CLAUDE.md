@@ -37,4 +37,4 @@ O lead do projeto (Eluan Jesus) não programa: desenvolve com IA e quer **aprend
 
 ## Comandos
 
-`npm run testar` · `npm run verificar` · `npm run vitrine` (no Windows: `.\dev testar` etc.)
+`npm run testar` · `npm run verificar` · `npm run vitrine` · `npm run pdv` (no Windows: `.\dev testar` etc.)

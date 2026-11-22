@@ -15,7 +15,8 @@
     "testar": "vitest run",
     "testar:assistir": "vitest",
     "verificar": "tsc -p tsconfig.json",
-    "vitrine": "vite --config pacotes/interface/vite.config.ts"
+    "vitrine": "vite --config pacotes/interface/vite.config.ts",
+    "pdv": "vite --config pacotes/pdv/vite.config.ts"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.3",

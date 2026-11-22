@@ -21,6 +21,7 @@
 | **Passo 1.1** · Regras de venda e estoque | `pacotes/dominio` | 🟡 **Feito, aguardando validação** (venda, desconto, pagamento, estoque, estorno; 32 testes novos) |
 | **Passo 1.2** · Fila (outbox) e migrações | `pacotes/sync` | 🟡 **Feito, aguardando validação** (SQLite do Node, migrações numeradas, fila; 14 testes novos) |
 | **Passo 1.3** · Banco e serviços do caixa | `pacotes/pdv` | 🟡 **Feito, aguardando validação** (`caixa.db` e um dia de caixa completo; 14 testes novos) |
+| **Passo 1.4** · Telas do PDV | `pacotes/pdv/web` | 🟡 **Feito, aguardando validação** (abrir caixa, venda, venda finalizada, fechamento; `.\dev pdv`) |
 
 ## 2. Próximo passo
 
@@ -64,7 +65,19 @@
    - Ainda não feito (fica para depois): chave de idempotência da venda (clique duplo), PIN do supervisor
      (a tela confere e informa "autorizado"), e identidade/parâmetros chegando pela ativação (Passo 3.1).
    - Conferir: `.\dev testar` (131 passando).
-7. **Passo 1.4 · Telas do PDV** (React no navegador), conforme `docs/05-plano-do-mvp.md`.
+7. **Validar o Passo 1.4** (telas do PDV): rodar `.\dev pdv` e abrir http://localhost:5174.
+   - O caixa novo se ativa sozinho como "MERCBAIRRO · Caixa 1" com 12 produtos de demonstração (60 de
+     estoque cada), até existir a ativação pelo ERP (Passo 3.1). O banco fica em `dados/pdv/caixa.db`
+     (fora do git); para começar do zero, feche o servidor e apague a pasta `dados/pdv`.
+   - Telas (`pacotes/pdv/web/`): abrir caixa; venda (busca por nome ou código de barras, quantidade,
+     desconto, CPF, pagamento misto, troco, últimas vendas com cancelamento); "Venda finalizada";
+     fechamento (resumo, sangria e suprimento, contagem da gaveta).
+   - Por baixo: `pacotes/pdv/src/servidor/` (API JSON do caixa, usada pelas telas). Diferença em relação
+     ao documento 02: no navegador as telas falam com essa API local em vez da "ponte do Electron"; no
+     Passo 1.5 o Electron hospeda a mesma API.
+   - Ainda simplificado: a autorização do supervisor é uma caixa de marcar (o PIN vem depois); não há
+     atalhos de teclado além do Enter.
+8. **Passo 1.5 · PDV instalado e comprovante** (Electron, impressão 58/80 mm), conforme o plano.
 
 ## 3. Como rodar
 
@@ -73,9 +86,10 @@ O projeto exige **Node 26**.
 ```powershell
 .\dev instalar    # baixa as ferramentas (npm install)
 .\dev versao      # deve mostrar v26.x
-.\dev testar      # testes automáticos (hoje: 131 passando)
+.\dev testar      # testes automáticos (hoje: 136 passando)
 .\dev verificar   # tipos do TypeScript (hoje: nenhum erro)
 .\dev vitrine     # vitrine da interface em http://localhost:5173
+.\dev pdv         # o PDV no navegador em http://localhost:5174
 ```
 
 - O `dev.cmd` (Windows) usa o Node 26 portátil de `OLD/runtime/node`. Essa pasta **não vai para o git**
@@ -94,6 +108,7 @@ O projeto exige **Node 26**.
 | 4 | NFC-e | Fora do MVP; confirmar com contador a obrigação por estado (MEI x ME) |
 | 5 | Hospedagem | Opção A (camadas gratuitas) no desenvolvimento; opção B (VPS no Brasil) com os primeiros clientes |
 | 6 | Ícone dos executáveis | Depende do pacote `resedit` (dependência de desenvolvimento) |
+| 7 | Executáveis para testar a conexão | **Pedido do lead (21/11/2026):** ao final, um executável por aplicação (`pdv-continuum.exe`, `agente-continuum.exe`, `nuvem-continuum.exe` com ERP + Central). Entrou no plano como Passo 3.5. O PDV ganha o executável já no Passo 1.5 (sozinho, sem conexão) |
 
 ## 5. Como trabalhamos (combinado entre os sócios e o Claude)
 

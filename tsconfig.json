@@ -10,6 +10,8 @@
     "pacotes/*/testes/**/*.ts",
     "pacotes/*/testes/**/*.tsx",
     "pacotes/*/vitrine/**/*.tsx",
+    "pacotes/*/web/**/*.ts",
+    "pacotes/*/web/**/*.tsx",
     "pacotes/*/vite.config.ts",
     "vitest.config.ts"
   ]

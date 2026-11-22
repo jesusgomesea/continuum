@@ -10,6 +10,10 @@
   "dependencies": {
     "@continuum/contratos": "*",
     "@continuum/dominio": "*",
-    "@continuum/sync": "*"
+    "@continuum/sync": "*",
+    "@continuum/interface": "*",
+    "lucide-react": "^1.77.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

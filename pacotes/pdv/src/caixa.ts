@@ -59,6 +59,24 @@ export interface Relatorio {
   diferencaCentavos: number | null;
 }
 
+export interface ProdutoDoCatalogo {
+  id: string;
+  nome: string;
+  precoCentavos: number;
+  unidade: string;
+  ean: string | null;
+  saldo: number;
+}
+
+export interface ResumoDeVenda {
+  codigo: string;
+  numero: number;
+  liquidoCentavos: number;
+  ocorridoEm: string;
+  sessaoId: string;
+  cancelada: boolean;
+}
+
 export interface OpcoesDoCaixa {
   relogio?: () => Date;
   gerarId?: () => string;
@@ -153,6 +171,42 @@ export class Caixa {
       this.#gravarMovimentacao(mov);
       return mov;
     });
+  }
+
+  /** Os produtos do caixa, com o saldo de cada um, em ordem alfabética. */
+  catalogo(): ProdutoDoCatalogo[] {
+    return this.#banco
+      .consultar(
+        `SELECT p.id, p.nome, p.preco_centavos, p.unidade, p.ean, COALESCE(SUM(m.quantidade), 0) AS saldo
+         FROM produtos p LEFT JOIN movimentacoes m ON m.produto_id = p.id
+         GROUP BY p.id ORDER BY p.nome`,
+      )
+      .map((l) => ({
+        id: String(l['id']),
+        nome: String(l['nome']),
+        precoCentavos: Number(l['preco_centavos']),
+        unidade: String(l['unidade']),
+        ean: l['ean'] === null ? null : String(l['ean']),
+        saldo: Number(l['saldo']),
+      }));
+  }
+
+  /** As últimas vendas deste caixa, da mais nova para a mais antiga. */
+  ultimasVendas(limite = 10): ResumoDeVenda[] {
+    return this.#banco
+      .consultar(
+        `SELECT v.codigo, v.numero, v.liquido_centavos, v.ocorrido_em, v.sessao_id, c.venda_id IS NOT NULL AS cancelada
+         FROM vendas v LEFT JOIN cancelamentos c ON c.venda_id = v.id ORDER BY v.numero DESC LIMIT ?`,
+        limite,
+      )
+      .map((l) => ({
+        codigo: String(l['codigo']),
+        numero: Number(l['numero']),
+        liquidoCentavos: Number(l['liquido_centavos']),
+        ocorridoEm: String(l['ocorrido_em']),
+        sessaoId: String(l['sessao_id']),
+        cancelada: Number(l['cancelada']) === 1,
+      }));
   }
 
   /** Saldo: a soma das movimentações do produto. */

@@ -12,6 +12,9 @@ node_modules/
 OLD/dados/
 OLD/runtime/
 
+# Bancos criados ao rodar o PDV e os outros apps em desenvolvimento (dados de teste)
+dados/
+
 # Arquivos de trabalho e saídas
 *.log
 coverage/

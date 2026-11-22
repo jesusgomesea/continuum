@@ -61,7 +61,7 @@ coração do Local First e já dá uma demonstração completa sem internet; dep
 | 🟡 **1.1 Regras de venda e estoque** (feito, aguardando validação do lead) | Reconstruo em TypeScript a lógica de venda e estoque do OLD (venda imutável, saldo como soma, estoque nunca negativo), explicando cada arquivo do OLD antes | Testes cobrindo venda, falta de estoque, estorno | Testes passando |
 | 🟡 **1.2 A fila (outbox)** (feito, aguardando validação do lead) | Pacote `sync`: a fila em SQLite e as migrações do banco, reconstruídas do OLD | Teste provando "venda e evento juntos, ou nenhum" | Testes passando |
 | 🟡 **1.3 Banco e serviços do caixa** (feito, aguardando validação do lead) | `caixa.db` com as tabelas do documento `04`; serviços de abrir caixa, registrar venda, fechar caixa | Um roteiro de teste fazendo um dia de caixa completo | Testes passando |
-| **1.4 Telas do PDV** | Telas em React (rodando primeiro no navegador): abrir caixa, venda, "Venda finalizada", fechamento | O PDV novo no navegador, com a cara do Continuum | Você consegue fazer uma venda e fechar o caixa |
+| 🟡 **1.4 Telas do PDV** (feito, aguardando validação do lead) | Telas em React (rodando primeiro no navegador): abrir caixa, venda, "Venda finalizada", fechamento | O PDV novo no navegador, com a cara do Continuum | Você consegue fazer uma venda e fechar o caixa |
 | **1.5 PDV instalado e comprovante** | Empacoto no Electron; impressão do comprovante (58 e 80 mm) e reimpressão | O programa instalado abrindo e imprimindo (ou mostrando na tela, sem impressora) | Venda impressa com os dados do comércio |
 
 ## Fase 2 · Nuvem: ERP e Central
@@ -82,6 +82,7 @@ coração do Local First e já dá uma demonstração completa sem internet; dep
 | **3.2 Subida (vendas → nuvem)** | O Sync Engine do OLD, reconstruído: a fila do caixa vai para a nuvem em ordem, sem duplicar | A venda feita no PDV aparecendo no relatório do ERP | Nuvem igual ao caixa, venda a venda |
 | **3.3 Descida (preços → caixa)** | Fila de alterações e cursor: preço mudado no ERP chega ao PDV | Preço alterado no ERP aparecendo no caixa | Alteração recebida em segundos |
 | **3.4 Monitor ao vivo** | Sinal de vida do PDV e painel do Central em tempo real (a essência do Continuum) | O Central mostrando o caixa vendendo, a fila e o estado | Queda de internet aparece no Central |
+| **3.5 Executáveis para o teste de conexão** (pedido do lead, 21/11/2026) | Um executável por aplicação, sem instalar Node nem banco: `pdv-continuum.exe` (Electron), `agente-continuum.exe` (serviço da loja) e `nuvem-continuum.exe` (ERP + Central rodando no computador, com o PostgreSQL portátil do OLD). Todos com o Node e o banco empacotados (nada baixado da internet) | Os três programas abertos: o PDV ativado pelo código do ERP, vendendo, a venda chegando ao ERP e o caixa aparecendo no Central | O lead testa sozinho a conexão entre as aplicações, inclusive derrubando a rede |
 
 ## Fase 4 · Piloto
 
