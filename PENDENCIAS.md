@@ -16,15 +16,22 @@
 | Etapa 5 · Plano do MVP (21 passos) | `docs/05-plano-do-mvp.md` | ✅ Aprovado; em execução |
 | **Passo 0.1** · Esqueleto do monorepo | `pacotes/*` | ✅ Concluído |
 | **Passo 0.2** · Identidade visual e vitrine | `pacotes/interface` | 🟡 **Feito, aguardando aprovação do visual** |
+| **Passo 0.3** · Regras básicas | `pacotes/dominio` | 🟡 **Feito, aguardando validação** (dinheiro, CPF/CNPJ/EAN, código da venda; 28 testes novos) |
 
 ## 2. Próximo passo
 
 1. **Aprovar (ou ajustar) o visual do Passo 0.2:** rodar `.\dev vitrine` e conferir os temas escuro e
    claro, a faixa de estado, os cartões, os chips, os botões, a paleta e a tipografia.
-2. **Passo 0.3 · Regras básicas** (pacote `dominio`): dinheiro em centavos, validação de CPF, CNPJ e
-   EAN (trazidos de `OLD/app/comum/documentos.js`) e o código da venda
-   `NOMELOJAREDUZIDO-00000-ABCD`, com testes. Seguir o ritual da seção 5: explicar antes, esperar o OK.
-3. Depois: Passo 0.4 (contratos dos eventos) e a Fase 1 (PDV sozinho), conforme `docs/05-plano-do-mvp.md`.
+2. **Validar o Passo 0.3** (pacote `dominio`), feito em 21/11/2026:
+   - `src/dinheiro.ts`: centavos inteiros, soma, preço × quantidade (meio centavo sobe),
+     `formatarReais` (R$ 1.234,56) e `lerReais` (lê o valor digitado sem número quebrado);
+   - `src/documentos.ts`: CPF, CNPJ e EAN-13 trazidos de `OLD/app/comum/documentos.js`, agora tipados;
+   - `src/codigo-venda.ts`: `MERCBAIRRO-10123-ABCD` (caixa 1 a 9 no primeiro dígito, número com pelo
+     menos 4 dígitos que cresce além de 9999, conferência = 4 últimos caracteres do UUID v7).
+   - Conferir: `.\dev testar` (34 passando) e ler os testes em `pacotes/dominio/testes/`.
+3. **Passo 0.4 · O "idioma" do sistema** (pacote `contratos`): formato e validação de cada evento.
+   Seguir o ritual da seção 5: explicar antes, esperar o OK.
+4. Depois: a Fase 1 (PDV sozinho), conforme `docs/05-plano-do-mvp.md`.
 
 ## 3. Como rodar
 
@@ -33,7 +40,7 @@ O projeto exige **Node 26**.
 ```powershell
 .\dev instalar    # baixa as ferramentas (npm install)
 .\dev versao      # deve mostrar v26.x
-.\dev testar      # testes automáticos (hoje: 6 passando)
+.\dev testar      # testes automáticos (hoje: 34 passando)
 .\dev verificar   # tipos do TypeScript (hoje: nenhum erro)
 .\dev vitrine     # vitrine da interface em http://localhost:5173
 ```
@@ -48,7 +55,7 @@ O projeto exige **Node 26**.
 
 | # | Ponto | Situação |
 |---|---|---|
-| 1 | Dígito do caixa no código da venda | Proposta adotada até decisão contrária: o primeiro dígito do número indica o caixa (`MERCBAIRRO-10123-ABCD`). Alternativa: letra do caixa (`MERCBAIRRO-A-00123-ABCD`) |
+| 1 | Dígito do caixa no código da venda | Proposta adotada até decisão contrária (já implementada no Passo 0.3): o primeiro dígito do número indica o caixa (`MERCBAIRRO-10123-ABCD`); o número tem no mínimo 4 dígitos e cresce depois de 9999 (`MERCBAIRRO-112345-ABCD`). Alternativa: letra do caixa (`MERCBAIRRO-A-00123-ABCD`) |
 | 2 | Contato da landing page | Falta definir e-mail ou WhatsApp para o botão "Agendar demonstração" |
 | 3 | Código-fonte original (TypeScript) | Não disponível; a lógica será reconstruída a partir de `OLD/app/dist`, pacote a pacote (decisão 4 da arquitetura) |
 | 4 | NFC-e | Fora do MVP; confirmar com contador a obrigação por estado (MEI x ME) |

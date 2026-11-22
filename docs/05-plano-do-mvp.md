@@ -51,7 +51,7 @@ coração do Local First e já dá uma demonstração completa sem internet; dep
 |---|---|---|---|
 | ✅ **0.1 Esqueleto do projeto** | Crio o monorepo na raiz: a pasta `pacotes/` com os 7 pacotes vazios (`dominio`, `contratos`, `sync`, `agente`, `pdv`, `nuvem`, `interface`), a configuração do TypeScript e dos testes, e os comandos `npm run testar` e `npm run verificar` | A árvore de pastas e um teste "olá" passando | `npm run testar` roda sem erro |
 | 🟡 **0.2 Identidade visual (tokens)** (feito, aguardando aprovação do visual) | Pacote `interface`: as cores, medidas e tipografia do Continuum em tokens, nos temas claro e escuro, e uma página **vitrine** com os primeiros componentes (Botão, Cartão, Chip, Faixa de estado) | A vitrine no navegador, com a cara do Continuum, alternando claro e escuro | Você aprova o visual |
-| **0.3 Regras básicas** | Pacote `dominio`: dinheiro em centavos, validação de CPF, CNPJ e EAN (trazidos do OLD) e o **código da venda** (`MERCBAIRRO-10123-ABCD`), com testes | Os testes dizendo, em português, o que cada regra garante | Todos os testes passando |
+| 🟡 **0.3 Regras básicas** (feito, aguardando validação do lead) | Pacote `dominio`: dinheiro em centavos, validação de CPF, CNPJ e EAN (trazidos do OLD) e o **código da venda** (`MERCBAIRRO-10123-ABCD`), com testes | Os testes dizendo, em português, o que cada regra garante | Todos os testes passando |
 | **0.4 O "idioma" do sistema** | Pacote `contratos`: o formato de cada evento (produto, estoque, venda, caixa, sinal de vida), com validação escrita uma vez para tela e servidor | Exemplos de eventos válidos e inválidos nos testes | Testes passando |
 
 ## Fase 1 · PDV sozinho (sem internet, formato MEI)
