@@ -20,6 +20,7 @@ dados/
 coverage/
 .vite/
 dist-vitrine/
+pacotes/*/dist/
 
 # Segredos locais (o .env.demo do OLD não tem segredos e é versionado)
 .env
