@@ -162,4 +162,16 @@ export const MIGRACOES_CAIXA: readonly Migracao[] = [
   { numero: 1, nome: 'fila', sql: SQL_FILA },
   { numero: 2, nome: 'operacao', sql: OPERACAO },
   { numero: 3, nome: 'tabelas_locais', sql: LOCAIS },
+  {
+    numero: 4,
+    nome: 'chaves_venda',
+    sql: `
+      -- Cada tentativa de venda tem uma chave; a mesma chave de novo devolve a mesma venda (clique duplo).
+      CREATE TABLE chaves_venda (
+        chave    TEXT PRIMARY KEY,
+        venda_id TEXT NOT NULL UNIQUE REFERENCES vendas (id)
+      ) STRICT;
+      ${somenteInclusao('chaves_venda')}
+    `,
+  },
 ];

@@ -93,10 +93,10 @@ describe('um dia de caixa completo', () => {
     expect(venda.numero).toBe(3);
     expect(caixa.saldo(PAO)).toBe(3);
 
-    caixa.cancelarVenda(venda.codigo.toLowerCase(), 'Cliente desistiu', 'Carla (supervisora)');
+    caixa.cancelarVenda(venda.codigo.toLowerCase(), 'Cliente desistiu', 'Carla (supervisora)', '1234');
     expect(caixa.saldo(PAO)).toBe(4);
     expect(caixa.buscarVenda(venda.codigo)).toMatchObject({ cancelada: true, venda: { liquidoCentavos: 899 } });
-    expect(() => caixa.cancelarVenda(venda.codigo, 'de novo', 'Carla')).toThrow(CancelamentoRecusadoError);
+    expect(() => caixa.cancelarVenda(venda.codigo, 'de novo', 'Carla', '1234')).toThrow(CancelamentoRecusadoError);
   });
 
   it('suprimento entra na gaveta; sangria não passa do que há na gaveta', () => {
