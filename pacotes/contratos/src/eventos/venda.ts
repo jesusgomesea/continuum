@@ -46,8 +46,8 @@ export interface VendaRegistrada {
   numero: number;
   lojaId: string;
   sessaoId: string;
-  itens: ItemVendido[];
-  pagamentos: Pagamento[];
+  itens: readonly ItemVendido[];
+  pagamentos: readonly Pagamento[];
   /** Soma de quantidade × preço de todos os itens. */
   brutoCentavos: number;
   /** Desconto total: o dos itens mais o dado no total da venda. */

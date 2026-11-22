@@ -18,6 +18,9 @@
 | **Passo 0.2** · Identidade visual e vitrine | `pacotes/interface` | 🟡 **Feito, aguardando aprovação do visual** |
 | **Passo 0.3** · Regras básicas | `pacotes/dominio` | 🟡 **Feito, aguardando validação** (dinheiro, CPF/CNPJ/EAN, código da venda; 28 testes novos) |
 | **Passo 0.4** · Contratos dos eventos | `pacotes/contratos` | 🟡 **Feito, aguardando validação** (8 tipos de evento + sinal de vida; 37 testes novos) |
+| **Passo 1.1** · Regras de venda e estoque | `pacotes/dominio` | 🟡 **Feito, aguardando validação** (venda, desconto, pagamento, estoque, estorno; 32 testes novos) |
+| **Passo 1.2** · Fila (outbox) e migrações | `pacotes/sync` | 🟡 **Feito, aguardando validação** (SQLite do Node, migrações numeradas, fila; 14 testes novos) |
+| **Passo 1.3** · Banco e serviços do caixa | `pacotes/pdv` | 🟡 **Feito, aguardando validação** (`caixa.db` e um dia de caixa completo; 14 testes novos) |
 
 ## 2. Próximo passo
 
@@ -42,8 +45,26 @@
    - Decisões para revisar: campo desconhecido é recusado (a versão nova do formato é o caminho para
      mudar); o tipo `DEVOLUCAO` do OLD saiu (devolução vira `ESTORNO`); quantidade vendida é inteira.
    - Conferir: `.\dev testar` (71 passando) e ler `pacotes/contratos/testes/`.
-4. **Fase 1 · Passo 1.1 Regras de venda e estoque** (pacote `dominio`), conforme `docs/05-plano-do-mvp.md`.
-   Seguir o ritual da seção 5: explicar antes, esperar o OK.
+4. **Validar o Passo 1.1** (pacote `dominio`), feito em 21/11/2026:
+   - `src/venda.ts`: `montarVenda` (preço do cadastro, estoque somado por produto, desconto com limite do
+     cliente e supervisor acima dele, pagamento misto, troco só em dinheiro, CPF/CNPJ) e `cancelarVenda`
+     (não altera a venda: gera o cancelamento e os ESTORNOS; só uma vez; só da sessão aberta);
+   - `src/estoque.ts`: saldo como soma, entrada, ajuste (nunca deixa negativo) e a regra do cliente
+     `bloquear` ou `permitir_alerta`; `src/id.ts`: UUID v7 feito à mão; `src/erros.ts`: as recusas com nome.
+5. **Validar o Passo 1.2** (pacote `sync`): `src/banco.ts` (SQLite que vem no Node 26, transação com
+   savepoint), `src/migracoes.ts` (numeradas, uma vez só, recusa migração antiga editada) e `src/fila.ts`
+   (só entra evento que passa no contrato; seq nunca se repete; marca "sincronizado" uma vez; falha
+   bloqueia a fila; limpeza dos confirmados após 90 dias). Teste "venda e evento juntos, ou nenhum".
+6. **Validar o Passo 1.3** (pacote `pdv`): `src/banco/migracoes.ts` (as tabelas do documento 04 com
+   gatilhos que impedem editar e apagar) e `src/caixa.ts` (ativar, parâmetros, receber produto, entrada,
+   abrir caixa, vender, cancelar, sangria e suprimento, fechar com relatório). Roteiro em
+   `pacotes/pdv/testes/dia-de-caixa.test.ts`.
+   - Decisões para revisar: a sangria não pode passar do dinheiro na gaveta; o fechamento conta o troco
+     como saída do dinheiro e exclui as vendas canceladas; venda recusada não gasta número.
+   - Ainda não feito (fica para depois): chave de idempotência da venda (clique duplo), PIN do supervisor
+     (a tela confere e informa "autorizado"), e identidade/parâmetros chegando pela ativação (Passo 3.1).
+   - Conferir: `.\dev testar` (131 passando).
+7. **Passo 1.4 · Telas do PDV** (React no navegador), conforme `docs/05-plano-do-mvp.md`.
 
 ## 3. Como rodar
 
@@ -52,7 +73,7 @@ O projeto exige **Node 26**.
 ```powershell
 .\dev instalar    # baixa as ferramentas (npm install)
 .\dev versao      # deve mostrar v26.x
-.\dev testar      # testes automáticos (hoje: 71 passando)
+.\dev testar      # testes automáticos (hoje: 131 passando)
 .\dev verificar   # tipos do TypeScript (hoje: nenhum erro)
 .\dev vitrine     # vitrine da interface em http://localhost:5173
 ```

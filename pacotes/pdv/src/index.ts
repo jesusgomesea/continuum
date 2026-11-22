@@ -8,3 +8,6 @@
 
 /** Nome do pacote (usado pelo teste do esqueleto, Passo 0.1). */
 export const PACOTE = 'pdv';
+
+export * from './banco/migracoes.ts';
+export * from './caixa.ts';

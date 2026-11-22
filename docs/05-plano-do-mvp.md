@@ -58,9 +58,9 @@ coração do Local First e já dá uma demonstração completa sem internet; dep
 
 | Passo | O que faço | O que você vai ver | Pronto quando |
 |---|---|---|---|
-| **1.1 Regras de venda e estoque** | Reconstruo em TypeScript a lógica de venda e estoque do OLD (venda imutável, saldo como soma, estoque nunca negativo), explicando cada arquivo do OLD antes | Testes cobrindo venda, falta de estoque, estorno | Testes passando |
-| **1.2 A fila (outbox)** | Pacote `sync`: a fila em SQLite e as migrações do banco, reconstruídas do OLD | Teste provando "venda e evento juntos, ou nenhum" | Testes passando |
-| **1.3 Banco e serviços do caixa** | `caixa.db` com as tabelas do documento `04`; serviços de abrir caixa, registrar venda, fechar caixa | Um roteiro de teste fazendo um dia de caixa completo | Testes passando |
+| 🟡 **1.1 Regras de venda e estoque** (feito, aguardando validação do lead) | Reconstruo em TypeScript a lógica de venda e estoque do OLD (venda imutável, saldo como soma, estoque nunca negativo), explicando cada arquivo do OLD antes | Testes cobrindo venda, falta de estoque, estorno | Testes passando |
+| 🟡 **1.2 A fila (outbox)** (feito, aguardando validação do lead) | Pacote `sync`: a fila em SQLite e as migrações do banco, reconstruídas do OLD | Teste provando "venda e evento juntos, ou nenhum" | Testes passando |
+| 🟡 **1.3 Banco e serviços do caixa** (feito, aguardando validação do lead) | `caixa.db` com as tabelas do documento `04`; serviços de abrir caixa, registrar venda, fechar caixa | Um roteiro de teste fazendo um dia de caixa completo | Testes passando |
 | **1.4 Telas do PDV** | Telas em React (rodando primeiro no navegador): abrir caixa, venda, "Venda finalizada", fechamento | O PDV novo no navegador, com a cara do Continuum | Você consegue fazer uma venda e fechar o caixa |
 | **1.5 PDV instalado e comprovante** | Empacoto no Electron; impressão do comprovante (58 e 80 mm) e reimpressão | O programa instalado abrindo e imprimindo (ou mostrando na tela, sem impressora) | Venda impressa com os dados do comércio |
 
