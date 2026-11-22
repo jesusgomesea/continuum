@@ -1,0 +1,10 @@
+{
+  "name": "@continuum/agente",
+  "version": "0.0.0",
+  "private": true,
+  "description": "O programa da loja",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

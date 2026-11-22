@@ -1,0 +1,16 @@
+{
+  // Verificação de tipos do projeto inteiro (dev verificar): todos os pacotes de uma vez.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "pacotes/*/src/**/*.ts",
+    "pacotes/*/src/**/*.tsx",
+    "pacotes/*/testes/**/*.ts",
+    "pacotes/*/testes/**/*.tsx",
+    "pacotes/*/vitrine/**/*.tsx",
+    "pacotes/*/vite.config.ts",
+    "vitest.config.ts"
+  ]
+}

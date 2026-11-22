@@ -1,0 +1,23 @@
+Continuum LAB - pacote portátil da demonstração
+================================================
+
+1. Copie a pasta continuum-portatil para C:\continuum
+   (evite OneDrive, pendrive e pastas com acento no nome).
+2. Dê dois cliques em iniciar-continuum.exe.
+   Na primeira vez o banco de dados é criado; pode levar cerca de 1 minuto.
+   O painel abre numa janela própria.
+3. Para encerrar: feche a janela do painel (ou o console preto, ou Ctrl+C nele).
+
+Se aparecer "O Windows protegeu o computador":
+   clique em "Mais informações" e depois em "Executar assim mesmo".
+
+Se o iniciar-continuum.exe for bloqueado, abra o Prompt de Comando nesta pasta e rode:
+   runtime\node\node.exe app\dist\executaveis\iniciar.js
+
+Para conferir, sem abrir o painel, se tudo funciona nesta máquina:
+   iniciar-continuum.exe --verificar
+   (leva cerca de 1 minuto; o resultado fica em dados\logs\verificacao.json)
+
+Para começar a demo do zero: encerre o Continuum e apague a pasta dados.
+
+Nada é instalado: tudo fica dentro desta pasta. Licenças de terceiros: pasta licencas.

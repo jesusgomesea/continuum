@@ -1,0 +1,27 @@
+# O git guarda o que a gente escreve, não o que a máquina gera.
+
+# Bibliotecas baixadas (reinstalar com: .\dev instalar)
+node_modules/
+
+# Executáveis gerados (o GitHub recusa arquivos acima de 100 MB; regerar com
+# OLD\runtime\node\node.exe OLD\app\comum\montar-exe.js)
+*.exe
+
+# OLD: dados da demonstração (bancos, PostgreSQL, perfil do navegador: ~1,3 GB)
+# e o runtime portátil (Node e PostgreSQL: ~320 MB). Não são código nosso.
+OLD/dados/
+OLD/runtime/
+
+# Arquivos de trabalho e saídas
+*.log
+coverage/
+.vite/
+dist-vitrine/
+
+# Segredos locais (o .env.demo do OLD não tem segredos e é versionado)
+.env
+.env.local
+
+# Sistema
+Thumbs.db
+.DS_Store

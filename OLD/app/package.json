@@ -1,0 +1,40 @@
+{
+  "name": "continuum",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de continuidade, sincronização e proteção de dados (LAB)",
+  "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sync": "node dist/executaveis/sync.js",
+    "continuum": "node dist/executaveis/operador.js",
+    "lab": "node dist/executaveis/lab.js",
+    "lab:demo": "node --env-file=.env.demo dist/executaveis/lab.js",
+    "lab:reset": "node dist/executaveis/lab-reset.js",
+    "cenario": "node dist/executaveis/cenario.js",
+    "pacote": "npm run build && node dist/executaveis/pacote.js",
+    "logo": "npm run build && node dist/executaveis/logo.js"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
+    "resedit": "3.1.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "pg": "^8.23.1",
+    "uuid": "^14.0.2"
+  },
+  "overrides": {
+    "pe-library": "2.0.1"
+  }
+}

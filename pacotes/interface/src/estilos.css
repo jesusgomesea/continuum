@@ -1,0 +1,3 @@
+/* Estilos globais do Continuum: importar uma vez em cada aplicação (Central, ERP, PDV). */
+@import './tokens/tokens.css';
+@import './tokens/base.css';

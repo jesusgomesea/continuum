@@ -1,0 +1,47 @@
+/* Base comum a todas as telas do Continuum (Central, ERP e PDV). */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: var(--fonte);
+  font-size: var(--texto-base);
+  line-height: 1.5;
+  transition: background var(--transicao), color var(--transicao);
+}
+
+h1, h2, h3, h4 {
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Foco sempre visível para quem navega pelo teclado (acessibilidade). */
+:focus-visible {
+  outline: 2px solid var(--cor-primaria-2);
+  outline-offset: 2px;
+}
+
+/* Ícones em SVG herdam a cor do texto. */
+svg {
+  flex: none;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Quem pede "reduzir animações" no sistema não vê animações. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

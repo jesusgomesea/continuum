@@ -1,0 +1,10 @@
+{
+  "name": "@continuum/nuvem",
+  "version": "0.0.0",
+  "private": true,
+  "description": "O servidor na nuvem: ERP de cada cliente e Continuum Central",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

@@ -1,0 +1,5 @@
+Runtime do Microsoft Visual C++ (msvcp140.dll, vcruntime140.dll, vcruntime140_1.dll)
+em runtime\postgres\bin: arquivos redistribuíveis do Microsoft Visual C++ 2015-2022,
+copiados ao lado dos binários do PostgreSQL (instalação local ao aplicativo), porque
+o zip do PostgreSQL não os traz. Termos da Microsoft para esses arquivos:
+https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files

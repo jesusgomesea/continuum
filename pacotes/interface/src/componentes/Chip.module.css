@@ -1,0 +1,22 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-1);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-medio);
+  border-radius: var(--raio-pilula);
+  padding: 0.2rem 0.65rem;
+  white-space: nowrap;
+}
+.ponto::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+.neutro { color: var(--cor-neutra); background: var(--cor-neutra-fundo); }
+.sucesso { color: var(--cor-sucesso); background: var(--cor-sucesso-fundo); }
+.atencao { color: var(--cor-atencao); background: var(--cor-atencao-fundo); }
+.erro { color: var(--cor-erro); background: var(--cor-erro-fundo); }
+.info { color: var(--cor-info); background: var(--cor-info-fundo); }

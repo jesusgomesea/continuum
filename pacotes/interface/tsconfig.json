@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "testes/**/*.ts", "testes/**/*.tsx", "vitrine/**/*.tsx", "vite.config.ts"]
+}

@@ -1,0 +1,23 @@
+{
+  // Regras do TypeScript que todos os pacotes seguem. O modo estrito é a régua
+  // mais exigente: erros de tipo aparecem antes de o programa rodar.
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    // O Node 26 executa .ts direto; os imports levam a extensão .ts.
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    // Telas em React (arquivos .tsx).
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"]
+  }
+}

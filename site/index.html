@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continuum · PDV e gestão que não param</title>
+<meta name="description" content="Continuum: plataforma Local First de PDV e gestão para microempresas. Vende mesmo sem internet, emite comprovante, controla o estoque e mostra ao vivo o que acontece em cada ponto de venda.">
+<link rel="icon" type="image/png" href="logo.png">
+<style>
+/* Identidade do Continuum: azul royal e lilás do material de apresentação,
+   painel escuro do produto. Só fontes do sistema, nada da internet. */
+:root {
+  --azul: #3d4bf0;
+  --azul-esc: #2b36c9;
+  --ciano: #22d3ee;
+  --tinta: #0f1222;
+  --texto: #2a2f45;
+  --suave: #5b6280;
+  --fundo: #f5f6fb;
+  --lilas: #eceefe;
+  --branco: #ffffff;
+  --borda: #e2e5f3;
+  --painel: #050a17;
+  --painel-card: #0a1328;
+  --painel-borda: #1a2a4a;
+  --verde: #34d399;
+  --ambar: #fbbf24;
+  --vermelho: #f87171;
+  --raio: 1.1rem;
+  --sombra: 0 10px 30px rgba(31, 41, 120, .08);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--fundo); color: var(--texto); font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; line-height: 1.55; }
+img { max-width: 100%; display: block; }
+a { color: var(--azul); }
+.envolve { width: min(1160px, 100% - 2.5rem); margin-inline: auto; }
+section { padding: 5.5rem 0; }
+.pilula { display: inline-block; font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--azul); border: 1.5px solid var(--azul); border-radius: 999px; padding: .25rem .8rem; }
+h1, h2, h3 { color: var(--tinta); line-height: 1.15; margin: 0; }
+h2 { font-size: clamp(1.7rem, 3.2vw, 2.5rem); font-weight: 700; margin-top: 1rem; max-width: 46rem; }
+h2 em, h1 em { font-style: normal; color: var(--azul); }
+.lead { font-size: 1.1rem; color: var(--suave); max-width: 44rem; margin: 1rem 0 0; }
+.botao { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; text-decoration: none; border-radius: 999px; padding: .85rem 1.4rem; transition: transform .15s, box-shadow .15s; }
+.botao:hover { transform: translateY(-1px); }
+.botao.primario { background: var(--azul); color: #fff; box-shadow: 0 8px 22px rgba(61, 75, 240, .35); }
+.botao.secundario { background: var(--branco); color: var(--tinta); border: 1px solid var(--borda); }
+.seta { display: inline-flex; width: 1.9rem; height: 1.9rem; border-radius: 50%; border: 1.5px solid currentColor; align-items: center; justify-content: center; font-size: .95rem; flex: none; }
+
+/* Navegação */
+.nav { position: sticky; top: 0; z-index: 10; background: rgba(245, 246, 251, .88); backdrop-filter: blur(10px); border-bottom: 1px solid transparent; }
+.nav .envolve { display: flex; align-items: center; gap: 1.5rem; height: 4.4rem; }
+.marca { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--tinta); font-weight: 800; letter-spacing: .22em; font-size: 1rem; }
+.marca img { width: 2.1rem; height: 2.1rem; border-radius: .55rem; }
+.nav nav { display: flex; gap: 1.4rem; margin-left: auto; }
+.nav nav a { color: var(--suave); text-decoration: none; font-weight: 600; font-size: .92rem; }
+.nav nav a:hover { color: var(--azul); }
+.nav .botao { padding: .55rem 1.1rem; font-size: .9rem; }
+
+/* Hero */
+.hero { padding: 4rem 0 5rem; }
+.hero .envolve { display: grid; grid-template-columns: 1.05fr 1fr; gap: 3rem; align-items: center; }
+.hero h1 { font-size: clamp(2.4rem, 5.4vw, 4rem); font-weight: 700; letter-spacing: -.01em; }
+.hero .tag { display: inline-block; margin-top: 1.4rem; background: var(--tinta); color: #fff; font-size: .85rem; font-weight: 600; border-radius: 999px; padding: .4rem 1rem; }
+.hero .lead { margin-top: 1.4rem; }
+.hero .acoes { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2rem; }
+.hero .provas { display: flex; flex-wrap: wrap; gap: 1.6rem; margin-top: 2.2rem; color: var(--suave); font-size: .9rem; }
+.hero .provas b { display: block; color: var(--tinta); font-size: 1.35rem; }
+
+/* Mock do painel (produto) */
+.vitrine { position: relative; background: linear-gradient(160deg, #e6e9ff, #f7f8ff); border-radius: 1.6rem; padding: 1.4rem; border: 1px solid var(--borda); }
+.vitrine::before { content: ''; position: absolute; inset: 12% -6% auto auto; width: 70%; height: 80%; border-right: 14px solid var(--azul); border-bottom: 14px solid var(--azul); border-bottom-right-radius: 4rem; opacity: .14; pointer-events: none; }
+.selo-vitrine { position: absolute; z-index: 2; top: -1.4rem; right: 1.2rem; background: #fff; border: 1px solid var(--borda); border-radius: .9rem; padding: .55rem .85rem; font-size: .82rem; box-shadow: var(--sombra); max-width: 13rem; }
+.selo-vitrine em { color: var(--azul); font-style: normal; font-weight: 700; }
+.painel { position: relative; background: var(--painel); border-radius: 1.1rem; padding: 1rem; color: #e8eef9; box-shadow: 0 30px 60px rgba(10, 15, 50, .35); font-size: .82rem; }
+.p-faixa { display: flex; align-items: center; gap: .8rem; border: 1px solid rgba(52, 211, 153, .5); background: radial-gradient(120% 160% at 0 0, #0c3a2b, var(--painel-card) 70%); border-radius: .8rem; padding: .7rem .9rem; }
+.p-faixa .ic { width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 3px solid var(--verde); color: var(--verde); display: grid; place-items: center; font-weight: 900; }
+.p-faixa b { color: var(--verde); font-size: 1.25rem; letter-spacing: .02em; }
+.p-faixa small { display: block; color: #b9c7dc; }
+.p-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; margin-top: .6rem; }
+.p-card { background: var(--painel-card); border: 1px solid var(--painel-borda); border-radius: .75rem; padding: .65rem .75rem; }
+.p-card small { color: #9fb0cc; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; }
+.p-card b { display: block; font-size: 1.35rem; margin-top: .15rem; font-variant-numeric: tabular-nums; }
+.p-card .ok { color: var(--verde); }
+.p-lojas { margin-top: .6rem; background: var(--painel-card); border: 1px solid var(--painel-borda); border-radius: .75rem; padding: .55rem .75rem; }
+.p-lojas div { display: grid; grid-template-columns: 1fr auto auto; gap: .8rem; align-items: center; padding: .32rem 0; border-bottom: 1px solid #12203d; }
+.p-lojas div:last-child { border: 0; }
+.chip { font-size: .66rem; font-weight: 800; border-radius: 999px; padding: .1rem .5rem; }
+.chip.v { color: var(--verde); background: #0b2a20; }
+.chip.a { color: var(--ambar); background: #2e2208; }
+.p-lojas span:nth-child(2) { color: #9fb0cc; font-variant-numeric: tabular-nums; }
+
+/* Cards genéricos */
+.grade { display: grid; gap: 1rem; margin-top: 2.6rem; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.card { background: var(--branco); border: 1px solid var(--borda); border-radius: var(--raio); padding: 1.5rem; box-shadow: var(--sombra); }
+.card h3 { font-size: 1.15rem; margin-top: .5rem; }
+.card p { color: var(--suave); margin: .6rem 0 0; font-size: .95rem; }
+.card .num { font-size: 1.9rem; font-weight: 800; color: var(--azul); }
+.card.destaque { border: 1.5px solid var(--azul); }
+.icone { width: 2.6rem; height: 2.6rem; border-radius: .8rem; background: var(--lilas); color: var(--azul); display: grid; place-items: center; font-size: 1.25rem; }
+
+/* Origem */
+.origem { background: var(--branco); border-block: 1px solid var(--borda); }
+.origem .envolve { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; }
+.linha-tempo { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--borda); }
+.linha-tempo li { position: relative; padding: 0 0 1.4rem 1.4rem; }
+.linha-tempo li::before { content: ''; position: absolute; left: -.45rem; top: .35rem; width: .8rem; height: .8rem; border-radius: 50%; background: var(--azul); box-shadow: 0 0 0 4px var(--lilas); }
+.linha-tempo b { color: var(--tinta); }
+.linha-tempo span { display: block; color: var(--suave); font-size: .93rem; }
+
+/* Arquitetura */
+.fluxo { display: flex; align-items: stretch; gap: .5rem; margin-top: 2.6rem; flex-wrap: wrap; }
+.fluxo .no { flex: 1 1 9rem; background: var(--branco); border: 1px solid var(--borda); border-radius: 1rem; padding: 1rem; text-align: center; }
+.fluxo .no b { display: block; color: var(--tinta); }
+.fluxo .no span { font-size: .82rem; color: var(--suave); }
+.fluxo .no.forte { background: var(--azul); border-color: var(--azul); }
+.fluxo .no.forte b, .fluxo .no.forte span { color: #fff; }
+.fluxo .liga { flex: 0 0 auto; align-self: center; color: var(--azul); font-weight: 800; }
+.nota { color: var(--suave); font-size: .9rem; margin-top: 1.2rem; }
+
+/* Produtos (seção escura, a cara do painel) */
+.escura { background: var(--painel); color: #c9d6ea; }
+.escura h2, .escura h3 { color: #fff; }
+.escura .pilula { color: var(--ciano); border-color: var(--ciano); }
+.escura .lead { color: #9fb0cc; }
+.escura h2 em { color: var(--ciano); }
+.escura .card { background: var(--painel-card); border-color: var(--painel-borda); box-shadow: none; }
+.escura .card p { color: #9fb0cc; }
+.escura .icone { background: #0f2650; color: var(--ciano); }
+.escura .card ul { margin: .9rem 0 0; padding-left: 1.1rem; color: #b9c7dc; font-size: .92rem; }
+.escura .card li { margin: .25rem 0; }
+.etiqueta { display: inline-block; margin-top: 1rem; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; border-radius: 999px; padding: .2rem .65rem; }
+.etiqueta.agora { color: var(--verde); background: #0b2a20; }
+.etiqueta.prox { color: var(--ambar); background: #2e2208; }
+
+/* Para quem */
+.publico .envolve { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: start; }
+.cupom { background: #fff; border-radius: .5rem; padding: 1.2rem 1.3rem; font-family: Consolas, 'Cascadia Mono', monospace; font-size: .82rem; color: #0f172a; box-shadow: var(--sombra); max-width: 22rem; margin-inline: auto; border: 1px solid var(--borda); }
+.cupom h4 { margin: 0; text-align: center; letter-spacing: .2em; }
+.cupom .c { text-align: center; color: #475569; font-size: .75rem; }
+.cupom hr { border: 0; border-top: 1px dashed #94a3b8; margin: .6rem 0; }
+.cupom .l { display: flex; justify-content: space-between; gap: 1rem; }
+.cupom .t { font-weight: 800; font-size: .95rem; }
+.cupom .cod { margin-top: .6rem; text-align: center; background: #eef2ff; color: var(--azul-esc); border-radius: .4rem; padding: .35rem; font-weight: 700; }
+.segmentos { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.2rem; }
+.segmentos span { background: var(--branco); border: 1px solid var(--borda); border-radius: 999px; padding: .4rem .9rem; font-weight: 600; font-size: .9rem; color: var(--tinta); }
+.lista-ok { list-style: none; padding: 0; margin: 1.4rem 0 0; display: grid; gap: .7rem; }
+.lista-ok li { display: flex; gap: .7rem; }
+.lista-ok li::before { content: '✓'; flex: none; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: var(--lilas); color: var(--azul); font-weight: 900; display: grid; place-items: center; font-size: .8rem; margin-top: .1rem; }
+
+/* Laboratório */
+.lab { background: var(--lilas); }
+.metricas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: 2.4rem; }
+.metrica { background: var(--branco); border-radius: var(--raio); padding: 1.4rem; border: 1px solid var(--borda); }
+.metrica b { display: block; font-size: 2.2rem; color: var(--azul); font-variant-numeric: tabular-nums; }
+.metrica span { color: var(--suave); font-size: .92rem; }
+
+/* Visão */
+.capacidades { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 2.2rem; }
+.capacidades span { display: inline-flex; align-items: center; gap: .6rem; background: var(--branco); border: 1px solid var(--borda); border-radius: 999px; padding: .75rem 1.3rem .75rem .8rem; font-weight: 700; color: var(--tinta); }
+.capacidades .seta { color: var(--azul); }
+
+/* Roadmap */
+.fases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2.6rem; }
+.fase { background: var(--branco); border: 1px solid var(--borda); border-radius: var(--raio); padding: 1.5rem; }
+.fase.atual { border: 1.5px solid var(--azul); }
+.fase small { font-weight: 800; color: var(--azul); letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; }
+.fase ul { margin: .8rem 0 0; padding-left: 1.1rem; color: var(--suave); font-size: .93rem; }
+.fase li { margin: .3rem 0; }
+
+/* Sócios */
+.socios { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; margin-top: 2.6rem; }
+.socio { display: flex; gap: 1.2rem; align-items: flex-start; background: var(--branco); border: 1px solid var(--borda); border-radius: var(--raio); padding: 1.6rem; box-shadow: var(--sombra); }
+.avatar { flex: none; width: 4.2rem; height: 4.2rem; border-radius: 1.2rem; background: linear-gradient(140deg, var(--azul), var(--ciano)); color: #fff; font-weight: 800; font-size: 1.4rem; display: grid; place-items: center; }
+.socio h3 { font-size: 1.25rem; }
+.socio .papel { color: var(--azul); font-weight: 700; font-size: .9rem; margin-top: .2rem; }
+.socio p { color: var(--suave); margin: .7rem 0 0; font-size: .95rem; }
+.socio ul { margin: .7rem 0 0; padding-left: 1.1rem; color: var(--suave); font-size: .9rem; }
+
+/* Contato e rodapé */
+.contato { padding: 4.5rem 0; }
+.cta { background: linear-gradient(135deg, var(--azul), #5a67ff); color: #fff; border-radius: 1.6rem; padding: 3rem; display: grid; grid-template-columns: 1.4fr 1fr; gap: 2rem; align-items: center; }
+.cta h2 { color: #fff; margin: 0; }
+.cta p { color: #dfe3ff; margin: .8rem 0 0; }
+.cta .acoes { display: flex; flex-wrap: wrap; gap: .8rem; justify-content: flex-end; }
+.cta .botao.primario { background: #fff; color: var(--azul); box-shadow: none; }
+.cta .botao.secundario { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .5); }
+footer { border-top: 1px solid var(--borda); padding: 2rem 0; color: var(--suave); font-size: .88rem; }
+footer .envolve { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; }
+
+/* Responsividade */
+@media (max-width: 980px) {
+  .hero .envolve, .origem .envolve, .publico .envolve, .cta { grid-template-columns: 1fr; }
+  .g4, .metricas { grid-template-columns: repeat(2, 1fr); }
+  .g3, .fases { grid-template-columns: 1fr; }
+  .nav nav { display: none; }
+  .cta .acoes { justify-content: flex-start; }
+}
+@media (max-width: 620px) {
+  section { padding: 4rem 0; }
+  .g4, .metricas, .socios { grid-template-columns: 1fr; }
+  .p-grade { grid-template-columns: 1fr 1fr; }
+  .p-grade .p-card:last-child { grid-column: 1 / -1; }
+  .fluxo .liga { transform: rotate(90deg); margin-inline: auto; }
+  .fluxo .no { flex-basis: 100%; }
+  .socio { flex-direction: column; }
+  .cta { padding: 2rem 1.4rem; }
+  .nav .botao { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .botao { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="nav">
+<div class="envolve">
+<a class="marca" href="#topo"><img src="logo.png" alt="">CONTINUUM</a>
+<nav aria-label="Seções">
+<a href="#problema">O problema</a>
+<a href="#como-funciona">Como funciona</a>
+<a href="#produtos">Produtos</a>
+<a href="#para-quem">Para quem</a>
+<a href="#socios">Sócios</a>
+</nav>
+<a class="botao primario" href="#contato">Quero conhecer</a>
+</div>
+</header>
+
+<main id="topo">
+
+<section class="hero">
+<div class="envolve">
+<div>
+<span class="pilula">PDV · Gestão · Monitoramento</span>
+<h1 style="margin-top:1.2rem">A operação trabalha.<br><em>O CONTINUUM<br>protege.</em></h1>
+<span class="tag">Continuidade e proteção de dados</span>
+<p class="lead">Ponto de venda e gestão para microempresas que <b>não param quando a internet cai</b>. Cada venda é gravada na loja primeiro, sincronizada com a nuvem depois e acompanhada <b>ao vivo</b>, de qualquer lugar.</p>
+<div class="acoes">
+<a class="botao primario" href="#contato">Agendar uma demonstração <span class="seta">↗</span></a>
+<a class="botao secundario" href="#como-funciona">Ver como funciona</a>
+</div>
+<div class="provas">
+<div><b>0</b>vendas perdidas na queda</div>
+<div><b>~1 s</b>para detectar a queda</div>
+<div><b>100%</b>da operação no ar</div>
+</div>
+</div>
+
+<div class="vitrine" aria-label="Ilustração do painel de monitoramento do Continuum">
+<div class="selo-vitrine">Plataforma <em>Local First</em> para operações que não podem parar</div>
+<div class="painel">
+<div class="p-faixa"><span class="ic">✓</span><div><b>SAUDÁVEL</b><small>Sistema estável · nuvem respondendo, o sync envia normalmente.</small></div></div>
+<div class="p-grade">
+<div class="p-card"><small>Vendas na loja</small><b>1.850</b></div>
+<div class="p-card"><small>Na nuvem</small><b class="ok">1.850</b></div>
+<div class="p-card"><small>Fila (outbox)</small><b>0</b></div>
+</div>
+<div class="p-lojas">
+<div><span>Loja Centro · Caixa 01</span><span>R$ 4.320</span><span class="chip v">SAUDÁVEL</span></div>
+<div><span>Loja Shopping Norte</span><span>R$ 6.115</span><span class="chip v">SAUDÁVEL</span></div>
+<div><span>Loja Santos</span><span>R$ 1.987</span><span class="chip a">OFFLINE · vendendo</span></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section class="origem">
+<div class="envolve">
+<div>
+<span class="pilula">Sobre</span>
+<h2>De <em>hub de dados</em> a plataforma de <em>venda e gestão</em>.</h2>
+<p class="lead">O CONTINUUM nasceu como <b>DATA HUB</b>, um projeto de continuidade e proteção de dados: gravar local primeiro, sincronizar com validação e recuperar com rastreabilidade. Agora essa base vira o coração de um PDV e de uma gestão feitos para quem não pode parar de vender.</p>
+</div>
+<ol class="linha-tempo">
+<li><b>DATA HUB</b><span>Idealizado por Enzo Gomes: continuidade, sincronização e proteção de dados.</span></li>
+<li><b>CONTINUUM LAB</b><span>Laboratório que derruba a conexão de propósito e prova que a operação continua e que nada se perde.</span></li>
+<li><b>Painel de monitoramento</b><span>Dashboard ao vivo: estado de cada ponto, fila, quedas e recuperação.</span></li>
+<li><b>PDV e Gestão</b><span>Venda, comprovante e estoque para microempresas, sobre a mesma base que não para.</span></li>
+</ol>
+</div>
+</section>
+
+<section id="problema">
+<div class="envolve">
+<span class="pilula">O problema</span>
+<h2>Quando o único sistema da operação para, <em>os dados e o trabalho param junto</em>.</h2>
+<p class="lead">É o que vemos acontecer na prática, todo dia, no comércio de bairro e na rede de lojas.</p>
+<div class="grade g3">
+<div class="card"><div class="icone">⚡</div><h3>Sistema fora do ar</h3><p>A internet cai, o servidor trava, e o caixa simplesmente não vende.</p></div>
+<div class="card"><div class="icone">📝</div><h3>Volta ao manual</h3><p>Caderninho, calculadora e retrabalho: vendas digitadas depois, com erro.</p></div>
+<div class="card"><div class="icone">◎</div><h3>Ponto único de falha</h3><p>Tudo depende de uma conexão só. Sem ela, não há venda, estoque nem visão do negócio.</p></div>
+</div>
+</div>
+</section>
+
+<section id="como-funciona" style="background:var(--branco)">
+<div class="envolve">
+<span class="pilula">Como funciona</span>
+<h2><em>Local First com Outbox:</em> a operação grava aqui, a nuvem consolida depois.</h2>
+<div class="grade g4">
+<div class="card"><div class="num">01</div><h3>Grava local</h3><p>Venda, estoque e o evento de envio são gravados juntos, na mesma transação, no banco da loja.</p></div>
+<div class="card"><div class="num">02</div><h3>Sincroniza</h3><p>O Sync Engine envia a fila em ordem para a nuvem, em lotes.</p></div>
+<div class="card destaque"><div class="num">03</div><h3>Conexão cai</h3><p>A operação continua. A fila apenas acumula; o cliente nem percebe.</p></div>
+<div class="card"><div class="num">04</div><h3>Valida e consolida</h3><p>Na volta, cada registro é validado antes de entrar. Nada duplica, nada se perde.</p></div>
+</div>
+<div class="fluxo" aria-label="Caminho de cada registro">
+<div class="no"><b>PDV / Gestão</b><span>a operação</span></div><span class="liga">→</span>
+<div class="no"><b>Banco local</b><span>SQLite + outbox</span></div><span class="liga">→</span>
+<div class="no forte"><b>Sync Engine</b><span>máquina de estados</span></div><span class="liga">→</span>
+<div class="no"><b>Validação</b><span>regras de conflito</span></div><span class="liga">→</span>
+<div class="no"><b>Nuvem</b><span>PostgreSQL</span></div><span class="liga">→</span>
+<div class="no"><b>Monitor</b><span>painel ao vivo</span></div>
+</div>
+<p class="nota">Não é a troca de um banco pelo outro: são eventos individuais, enviados em ordem e validados um a um. Cada registro segue um caminho rastreável.</p>
+</div>
+</section>
+
+<section id="produtos" class="escura">
+<div class="envolve">
+<span class="pilula">Produtos</span>
+<h2>Três peças, <em>uma operação integrada</em>.</h2>
+<p class="lead">Cada ponto de venda trabalha sozinho quando precisa; o servidor central junta tudo e mostra, abertamente, o que está acontecendo em cada loja.</p>
+<div class="grade g3">
+<div class="card"><div class="icone">🧾</div><h3>Continuum PDV</h3><p>O caixa que não para.</p>
+<ul><li>Venda rápida por código, busca ou leitor</li><li>Comprovante com os dados do comércio (CNPJ ou CPF)</li><li>Baixa de estoque a cada venda</li><li>Vende offline e sincroniza na volta</li></ul>
+<span class="etiqueta agora">MVP em andamento</span></div>
+<div class="card"><div class="icone">📦</div><h3>Continuum Gestão</h3><p>O ERP enxuto da microempresa.</p>
+<ul><li>Cadastro de produtos e preços</li><li>Estoque com kardex e inventário</li><li>Entrada por nota fiscal (XML), com lote e validade</li><li>Relatórios de venda e margem</li></ul>
+<span class="etiqueta prox">Próxima fase</span></div>
+<div class="card"><div class="icone">📡</div><h3>Continuum Monitor</h3><p>A visão de todos os pontos de venda.</p>
+<ul><li>Estado de cada loja e caixa, ao vivo</li><li>Fila, quedas, detecção e recuperação</li><li>Validação de qualquer venda pelo código</li><li>Disponibilidade e relatórios da rede</li></ul>
+<span class="etiqueta agora">Protótipo funcionando</span></div>
+</div>
+</div>
+</section>
+
+<section id="para-quem" class="publico">
+<div class="envolve">
+<div>
+<span class="pilula">Para quem</span>
+<h2>Começando pela <em>microempresa</em>.</h2>
+<p class="lead">Do comércio de esquina ao pequeno varejo: registrar a venda, imprimir o comprovante e saber exatamente o que tem no estoque.</p>
+<ul class="lista-ok">
+<li>Comprovante de venda com nome, CNPJ ou CPF e endereço do comércio</li>
+<li>Cadastro de produtos e estoque que baixa sozinho a cada venda</li>
+<li>Funciona mesmo sem internet: a venda nunca fica para depois</li>
+<li>Configurado para cada negócio, sem código sob medida</li>
+</ul>
+<div class="segmentos" aria-label="Segmentos">
+<span>Mercearia</span><span>Padaria</span><span>Lanchonete</span><span>Loja de bairro</span><span>Conveniência</span><span>Hortifrúti</span>
+</div>
+</div>
+<div class="cupom" aria-label="Exemplo de comprovante de venda">
+<h4>MERCEARIA DO BAIRRO</h4>
+<div class="c">CNPJ 00.000.000/0001-00 · Rua Exemplo, 100</div>
+<div class="c">COMPROVANTE DE VENDA · NÃO É DOCUMENTO FISCAL</div>
+<hr>
+<div class="l"><span>Venda nº 015.855</span><span>21/11 · 11:36</span></div>
+<hr>
+<div class="l"><span>2 × Café 500 g</span><span>R$ 37,80</span></div>
+<div class="l"><span>1 × Arroz 5 kg</span><span>R$ 27,90</span></div>
+<hr>
+<div class="l t"><span>TOTAL</span><span>R$ 65,70</span></div>
+<div class="l"><span>Dinheiro</span><span>R$ 70,00</span></div>
+<div class="l"><span>Troco</span><span>R$ 4,30</span></div>
+<div class="cod">CX01-015855-7F3A</div>
+<div class="c" style="margin-top:.4rem">ilustração</div>
+</div>
+</div>
+</section>
+
+<section class="lab">
+<div class="envolve">
+<span class="pilula">Laboratório</span>
+<h2>Testado sob falha, <em>de propósito</em>.</h2>
+<p class="lead">O laboratório reproduz uma operação real e derruba a conexão para provar que a loja continua vendendo e que a fila sincroniza corretamente na volta. Números medidos no LAB:</p>
+<div class="metricas">
+<div class="metrica"><b>~1,0 s</b><span>para detectar a queda e entrar em contingência</span></div>
+<div class="metrica"><b>~6,0 s</b><span>para voltar ao SAUDÁVEL depois que a nuvem volta</span></div>
+<div class="metrica"><b>98</b><span>vendas feitas offline num único teste de queda</span></div>
+<div class="metrica"><b>0</b><span>vendas perdidas: nuvem igual à loja, evento por evento</span></div>
+</div>
+</div>
+</section>
+
+<section>
+<div class="envolve">
+<span class="pilula">Visão</span>
+<h2>Mais do que armazenar: <em>controle sobre os dados</em>.</h2>
+<div class="capacidades">
+<span><i class="seta">↗</i>Controle</span><span><i class="seta">↗</i>Monitoramento</span><span><i class="seta">↗</i>Organização</span>
+<span><i class="seta">↗</i>Integridade</span><span><i class="seta">↗</i>Proteção</span><span><i class="seta">↗</i>Recuperação</span><span><i class="seta">↗</i>Rastreabilidade</span>
+</div>
+<p class="nota">Capacidades propostas pelo projeto, implementadas de forma gradual.</p>
+
+<div class="fases">
+<div class="fase atual"><small>Agora · MVP</small><h3 style="margin-top:.4rem">Venda e comprovante</h3>
+<ul><li>PDV com comprovante (CNPJ ou CPF)</li><li>Cadastro e estoque com baixa na venda</li><li>Monitor ao vivo dos pontos de venda</li></ul></div>
+<div class="fase"><small>Próximo</small><h3 style="margin-top:.4rem">Gestão completa</h3>
+<ul><li>Operação de caixa: abertura, sangria, fechamento</li><li>Entrada por XML da NF-e, lote e validade</li><li>Configuração por segmento e por cliente</li></ul></div>
+<div class="fase"><small>Futuro</small><h3 style="margin-top:.4rem">Inteligência fiscal</h3>
+<ul><li>Leitura de nota em PDF ou foto</li><li>Emissão fiscal (NFC-e)</li><li>Relatórios e indicadores da rede</li></ul></div>
+</div>
+</div>
+</section>
+
+<section id="socios" style="background:var(--branco)">
+<div class="envolve">
+<span class="pilula">Sócios</span>
+<h2>Quem está <em>por trás</em> do Continuum.</h2>
+<div class="socios">
+<article class="socio">
+<div class="avatar" aria-hidden="true">EJ</div>
+<div>
+<h3>Eluan Jesus</h3>
+<div class="papel">Sócio · Lead do projeto</div>
+<p>Lidera o produto, conduz as apresentações e desenvolve com inteligência artificial, transformando a visão do negócio em software.</p>
+<ul><li>Liderança e direção do produto</li><li>Apresentações e relacionamento</li><li>Desenvolvimento com IA</li></ul>
+</div>
+</article>
+<article class="socio">
+<div class="avatar" aria-hidden="true">EG</div>
+<div>
+<h3>Enzo Gomes</h3>
+<div class="papel">Sócio · Idealizador</div>
+<p>Criou o Continuum, originalmente chamado DATA HUB, e definiu a base Local First de continuidade e proteção de dados.</p>
+<ul><li>Concepção do projeto</li><li>Arquitetura Local First e Outbox</li><li>Laboratório de falhas</li></ul>
+</div>
+</article>
+</div>
+</div>
+</section>
+
+<section id="contato" class="contato">
+<div class="envolve">
+<div class="cta">
+<div>
+<h2>Vamos manter a operação seguindo em frente.</h2>
+<p>Quer ver o Continuum funcionando, com a internet caindo de verdade e a loja continuando a vender? Agende uma demonstração com os sócios.</p>
+</div>
+<div class="acoes">
+<a class="botao primario" href="#topo">Agendar demonstração</a>
+<a class="botao secundario" href="#como-funciona">Entender a tecnologia</a>
+</div>
+</div>
+</div>
+</section>
+
+</main>
+
+<footer>
+<div class="envolve">
+<a class="marca" href="#topo"><img src="logo.png" alt="">CONTINUUM</a>
+<span>Sempre em operação. · Eluan Jesus e Enzo Gomes · © 2026</span>
+</div>
+</footer>
+
+</body>
+</html>

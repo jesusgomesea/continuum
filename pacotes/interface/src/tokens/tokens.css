@@ -1,0 +1,127 @@
+/* Tokens de design do Continuum: cada decisão visual tem um nome.
+   As telas nunca usam a cor direto (#2563eb): usam o token (var(--cor-primaria)).
+   O tema é escolhido no <html data-tema="escuro"> ou "claro"; trocar o tema só troca os valores.
+
+   Origem das cores:
+   - escuro: painel.css do Dashboard (OLD) -> Central e PDV
+   - claro:  material de apresentação (PDF) e landing page -> ERP do cliente */
+
+/* ---------------------------------------------------------------- iguais nos dois temas */
+:root {
+  /* Tipografia: fontes do próprio sistema (funcionam offline, nada para baixar). */
+  --fonte: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --fonte-mono: Consolas, 'Cascadia Mono', ui-monospace, monospace;
+  --texto-xs: 0.75rem;   /* 12 px: rótulos, notas */
+  --texto-sm: 0.875rem;  /* 14 px: texto de apoio */
+  --texto-base: 1rem;    /* 16 px: texto normal */
+  --texto-lg: 1.125rem;  /* 18 px: destaque */
+  --texto-xl: 1.5rem;    /* 24 px: títulos de seção */
+  --texto-2xl: 2rem;     /* 32 px: títulos de página */
+  --texto-3xl: 2.6rem;   /* 42 px: números grandes (KPI) */
+  --peso-normal: 400;
+  --peso-medio: 600;
+  --peso-forte: 700;
+  --peso-extra: 800;
+
+  /* Espaçamento: uma escala só, para tudo ficar alinhado entre as telas. */
+  --espaco-1: 0.25rem;  /*  4 px */
+  --espaco-2: 0.5rem;   /*  8 px */
+  --espaco-3: 0.75rem;  /* 12 px */
+  --espaco-4: 1rem;     /* 16 px */
+  --espaco-5: 1.25rem;  /* 20 px */
+  --espaco-6: 1.5rem;   /* 24 px */
+  --espaco-8: 2rem;     /* 32 px */
+  --espaco-10: 2.5rem;  /* 40 px */
+
+  /* Cantos arredondados. */
+  --raio-p: 0.5rem;
+  --raio-m: 0.75rem;
+  --raio-g: 1rem;
+  --raio-pilula: 999px;
+
+  /* Tamanho mínimo de área de toque (PDV com tela de toque). */
+  --toque-minimo: 44px;
+
+  --transicao: 0.2s ease;
+}
+
+/* ---------------------------------------------------------------- tema escuro (padrão) */
+:root,
+[data-tema='escuro'] {
+  color-scheme: dark;
+  --cor-fundo: #050a17;
+  --cor-lateral: #060c1b;
+  --cor-superficie: #0a1328;      /* cartões */
+  --cor-superficie-2: #0d1a36;    /* campos, linhas de lista */
+  --cor-borda: #1a2a4a;
+  --cor-texto: #e8eef9;
+  --cor-texto-suave: #b9c7dc;
+  --cor-texto-fraco: #9fb0cc;
+
+  --cor-primaria: #2563eb;
+  --cor-primaria-2: #38bdf8;      /* fim do gradiente e destaques */
+  --cor-primaria-fundo: #0f2650;
+  --cor-sobre-primaria: #ffffff;  /* texto em cima da cor primária */
+  --gradiente-primario: linear-gradient(90deg, var(--cor-primaria), #22d3ee);
+
+  --cor-sucesso: #34d399;
+  --cor-sucesso-fundo: #0b2a20;
+  --cor-atencao: #fbbf24;
+  --cor-atencao-fundo: #2e2208;
+  --cor-erro: #f87171;
+  --cor-erro-fundo: #3a1010;
+  --cor-erro-forte: #b91c1c;      /* botão de perigo */
+  --cor-info: #7cc4ff;
+  --cor-info-fundo: #0f2650;
+  --cor-neutra: #94a3b8;
+  --cor-neutra-fundo: #1b2333;
+
+  --sombra-cartao: none;
+  --sombra-flutuante: 0 12px 30px rgb(0 0 0 / 0.5);
+}
+
+/* ---------------------------------------------------------------- tema claro */
+[data-tema='claro'] {
+  color-scheme: light;
+  --cor-fundo: #f5f6fb;
+  --cor-lateral: #ffffff;
+  --cor-superficie: #ffffff;
+  --cor-superficie-2: #eceefe;    /* o lilás do material de apresentação */
+  --cor-borda: #e2e5f3;
+  --cor-texto: #0f1222;
+  --cor-texto-suave: #2a2f45;
+  --cor-texto-fraco: #5b6280;
+
+  --cor-primaria: #3d4bf0;        /* azul royal do PDF */
+  --cor-primaria-2: #5a67ff;
+  --cor-primaria-fundo: #eceefe;
+  --cor-sobre-primaria: #ffffff;
+  --gradiente-primario: linear-gradient(90deg, var(--cor-primaria), var(--cor-primaria-2));
+
+  /* Tons mais escuros que no tema escuro: no fundo branco precisam de contraste (AA). */
+  --cor-sucesso: #047857;
+  --cor-sucesso-fundo: #e3f6ee;
+  --cor-atencao: #a16207;
+  --cor-atencao-fundo: #fdf3dc;
+  --cor-erro: #c81e1e;
+  --cor-erro-fundo: #fde8e8;
+  --cor-erro-forte: #c81e1e;
+  --cor-info: #2b36c9;
+  --cor-info-fundo: #eceefe;
+  --cor-neutra: #5b6280;
+  --cor-neutra-fundo: #eef0f6;
+
+  --sombra-cartao: 0 10px 30px rgb(31 41 120 / 0.08);
+  --sombra-flutuante: 0 16px 40px rgb(31 41 120 / 0.18);
+}
+
+/* ---------------------------------------------------------------- estados do sistema
+   O mesmo significado em todo o Continuum (do OLD): verde, âmbar, vermelho, azul. */
+:root,
+[data-tema] {
+  --estado-saudavel: var(--cor-sucesso);
+  --estado-degradado: var(--cor-atencao);
+  --estado-offline: var(--cor-erro);
+  --estado-recuperando: var(--cor-atencao);
+  --estado-sincronizando: var(--cor-primaria-2);
+}

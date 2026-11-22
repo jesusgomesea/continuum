@@ -1,0 +1,30 @@
+.cartao {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-3);
+  padding: var(--espaco-4) var(--espaco-5);
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-g);
+  box-shadow: var(--sombra-cartao);
+}
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-3);
+}
+.titulo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  font-size: var(--texto-base);
+  font-weight: var(--peso-forte);
+}
+.titulo svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--cor-primaria-2);
+}
+[data-tema='claro'] .titulo svg { color: var(--cor-primaria); }

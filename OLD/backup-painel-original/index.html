@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continuum LAB</title>
+<!-- Tudo local: sem fontes, ícones ou bibliotecas da internet (ADR 013). -->
+<link rel="stylesheet" href="painel.css">
+<link rel="icon" type="image/png" href="logo.png">
+</head>
+<body>
+<div class="app">
+
+<aside>
+<div class="marca">
+<img src="logo.png" alt="Logo do Continuum">
+<div class="espacado marca-nome">CONTINUUM</div>
+</div>
+<nav aria-label="Menu principal">
+<a class="ativo" aria-current="page" data-tela="dashboard" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1z"/></svg>Dashboard</a>
+<a data-tela="topologia" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-2.5a2.5 2.5 0 012.5-2.5h9a2.5 2.5 0 012.5 2.5V17"/></svg>Topologia</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/></svg>Lojas</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 01-15.5 6.2L3 16M3 12a9 9 0 0115.5-6.2L21 8"/></svg>Sincronização</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5c0-1.7 3.6-3 8-3s8 1.3 8 3v14c0 1.7-3.6 3-8 3s-8-1.3-8-3zM4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Armazenamento</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Segurança</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 109-9 9.7 9.7 0 00-6.7 2.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>Recuperação</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Relatórios</a>
+<a><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Configurações</a>
+</nav>
+<div class="rodape-lateral">
+<div class="caixa" id="caixa-conexao">
+<div class="conexao-titulo"><span class="ponto" id="ponto-conexao"></span><span id="conexao-titulo">Conectando…</span></div>
+<div class="conexao" id="conexao">conectando ao LAB…</div>
+</div>
+<div class="lema">
+<div class="espacado">CONTINUUM</div>
+<div>Sempre em operação.</div>
+</div>
+</div>
+</aside>
+
+<main>
+
+<div class="topo">
+<label class="busca">
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+<span class="oculto">Buscar no painel</span>
+<input type="search" placeholder="Buscar no painel...">
+</label>
+<div class="topo-direita">
+<span class="aovivo"><span class="ponto"></span>LAB ao vivo</span>
+<button type="button" class="sino" aria-label="Notificações"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg><span></span></button>
+<div class="usuario"><span class="avatar">O</span><span>Operador LAB</span></div>
+</div>
+</div>
+
+<!-- Faixa de estado: muda de cor e de texto com o estado da sincronização. -->
+<section class="faixa" id="faixa" data-estado="">
+<span class="faixa-icone" aria-hidden="true">
+<svg class="i-ok" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+<svg class="i-alerta" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+<svg class="i-sync" viewBox="0 0 24 24"><path d="M21 12a9 9 0 01-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0115.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg>
+</span>
+<div class="faixa-texto">
+<div class="faixa-titulo"><span id="estado">—</span><span class="faixa-extra" id="estado-extra"></span></div>
+<div class="faixa-detalhe" id="estado-detalhe">Aguardando o LAB.</div>
+<div class="faixa-aviso" id="aviso-sync" hidden>Um processo do LAB parou (sync ou nuvem). Veja o terminal do LAB.</div>
+</div>
+<dl class="tempos">
+<div><dt>Detecção da queda</dt><dd id="tempo-deteccao">—</dd></div>
+<div><dt>Volta ao SAUDÁVEL</dt><dd id="tempo-recuperacao">—</dd></div>
+<div id="durante-queda" hidden><dt>Vendas na queda</dt><dd id="vendas-queda">0</dd></div>
+</dl>
+</section>
+
+<div class="tela" id="tela-dashboard">
+<div class="grade-a">
+<section class="cartao">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Status do sistema</h2>
+<span class="chip" id="chip-status">—</span>
+</div>
+<div class="status-corpo">
+<svg class="anel" viewBox="0 0 150 150" role="img" aria-labelledby="vendas-local">
+<defs><linearGradient id="anel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs>
+<circle cx="75" cy="75" r="62" class="anel-fundo"/>
+<circle cx="75" cy="75" r="62" class="anel-cor" id="anel-cor"/>
+<text x="75" y="76" text-anchor="middle" class="anel-valor" id="vendas-local">0</text>
+<text x="75" y="100" text-anchor="middle" class="anel-rotulo">vendas na loja</text>
+</svg>
+<ul class="checks">
+<li id="chk-servicos"><span class="ok"></span>Serviços ativos</li>
+<li id="chk-nuvem"><span class="ok"></span>Nuvem no ar</li>
+<li id="chk-fila"><span class="ok"></span>Sincronização em dia</li>
+<li id="chk-gravado"><span class="ok"></span><span id="eventos-local">0 eventos gravados</span></li>
+</ul>
+</div>
+<div class="extras">+5 lojas da rede · saudáveis <span class="selo-sim">simulação</span></div>
+</section>
+
+<section class="cartao">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 01-15.5 6.2L3 16"/><path d="M3 12a9 9 0 0115.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M3 21v-5h5"/></svg>Sincronização</h2>
+<span class="chip" id="chip-sync">—</span>
+</div>
+<div class="grande" id="vendas-nuvem">0</div>
+<div class="sub">vendas na nuvem · <span id="eventos-nuvem">0 eventos recebidos</span></div>
+<div class="barra"><div id="barra-sync"></div></div>
+<div class="nota" id="pct-sync">—</div>
+</section>
+
+<section class="cartao">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Fila de operações</h2>
+<span class="chip" id="chip-fila">—</span>
+</div>
+<div class="fila-corpo">
+<div><div class="grande" id="pendentes">0</div><div class="sub">eventos pendentes</div></div>
+<div class="colunas" id="colunas" aria-hidden="true"></div>
+</div>
+<div class="nota">fila local (outbox): nada se perde sem a nuvem</div>
+</section>
+</div>
+
+<div class="grade-b">
+<section class="cartao simulador">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3l14 9-14 9z"/></svg>Simulador</h2>
+<span class="chip" id="nuvem-situacao">nuvem no ar</span>
+</div>
+<form id="form-vendas">
+<label>Quantidade <input id="quantidade" type="number" min="1" max="1000000" value="200" required></label>
+<label>Ritmo (vendas/s) <input id="ritmo" type="number" min="1" max="1000" value="20" required></label>
+<div class="botoes">
+<button type="submit" id="gerar">Gerar vendas</button>
+<button type="button" id="parar" class="secundario">Parar</button>
+</div>
+</form>
+<div class="barra fina"><div id="progresso"></div></div>
+<div class="nota esquerda" id="geracao">Nenhuma geração ainda.</div>
+<div class="nuvem-linha">
+<label><span class="oculto">Tipo de queda</span><select id="tipo-queda">
+<option value="corte" selected>Corte de conexão</option>
+<option value="503">Erro 503</option>
+</select></label>
+<div class="botoes">
+<button type="button" id="derrubar" class="perigo">Derrubar nuvem</button>
+<button type="button" id="restaurar">Restaurar</button>
+</div>
+</div>
+<details class="avancado">
+<summary>Avançado: operador</summary>
+<div class="avancado-corpo">
+<label>Modo <select id="modo">
+<option value="automatico">Automático</option>
+<option value="manual">Manual</option>
+<option value="local-forcado">Local forçado</option>
+</select></label>
+<span class="nota esquerda" id="proposta">Nenhuma transição proposta.</span>
+<button type="button" id="confirmar" class="secundario" disabled>Confirmar</button>
+</div>
+</details>
+<p class="mensagem" role="status"></p>
+</section>
+
+<section class="cartao atividade">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Atividade recente</h2>
+<span class="nota">linha do tempo do LAB</span>
+</div>
+<p class="vazio" id="sem-atividade">As mudanças de estado, a queda e a volta da nuvem aparecem aqui.</p>
+<ul class="atividades" id="linha-do-tempo"></ul>
+</section>
+
+<div class="coluna-sim">
+<section class="cartao">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>Armazenamento</h2>
+<span class="selo-sim">simulação</span>
+</div>
+<div class="armaz">
+<div><div class="grande">78<small>%</small></div><div class="sub">312 de 400 GB</div></div>
+<svg viewBox="0 0 360 140" preserveAspectRatio="none" aria-hidden="true">
+<defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2563eb" stop-opacity=".45"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/></linearGradient></defs>
+<path d="M0 110 C30 90 45 70 70 82 S110 100 130 78 S170 52 195 76 S240 92 262 70 S300 64 320 46 S345 26 352 24 L352 140 L0 140 Z" fill="url(#area)"/>
+<path d="M0 110 C30 90 45 70 70 82 S110 100 130 78 S170 52 195 76 S240 92 262 70 S300 64 320 46 S345 26 352 24" fill="none" stroke="#38bdf8" stroke-width="4"/>
+</svg>
+</div>
+<div class="barra"><div style="width:78%"></div></div>
+</section>
+
+<section class="cartao">
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Segurança</h2>
+<span class="selo-sim">simulação</span>
+</div>
+<ul class="seguranca">
+<li>✓ Acesso por perfil (TI, supervisor)</li>
+<li>✓ Backup isolado da produção</li>
+<li>✓ Sync suspeito bloqueado</li>
+</ul>
+</section>
+</div>
+</div>
+</div>
+
+<!-- Topologia: só o cabo Loja LAB ↔ Nuvem é real; o resto é animação (selo "simulação"). -->
+<section class="tela cartao topologia" id="tela-topologia" hidden>
+<div class="cab">
+<h2><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2" width="6" height="5" rx="1"/><rect x="2" y="17" width="6" height="5" rx="1"/><rect x="16" y="17" width="6" height="5" rx="1"/><path d="M12 7v5M5 17v-2.5a2.5 2.5 0 012.5-2.5h9a2.5 2.5 0 012.5 2.5V17"/></svg>Topologia</h2>
+<span class="nota">arquitetura da loja à nuvem</span>
+</div>
+<div class="topo-corpo">
+<svg class="mapa" viewBox="0 0 1000 510" role="img" aria-label="Topologia: Matriz, Loja LAB, banco local, SSD, HD, backup protegido e nuvem">
+<g class="cabos">
+<g class="cabo"><path class="base" d="M245 90 L755 90"/><path class="fluxo" d="M245 90 L755 90"/></g>
+<g class="cabo"><path class="base" d="M150 134 C150 215 300 215 405 215"/><path class="fluxo" d="M150 134 C150 215 300 215 405 215"/></g>
+<g class="cabo"><path class="base" d="M500 259 L500 291"/><path class="fluxo" d="M500 259 L500 291"/></g>
+<g class="cabo"><path class="base" d="M405 335 C290 335 200 350 200 411"/><path class="fluxo" d="M405 335 C290 335 200 350 200 411"/></g>
+<g class="cabo"><path class="base" d="M500 379 L500 411"/><path class="fluxo" d="M500 379 L500 411"/></g>
+<g class="cabo"><path class="base" d="M595 455 L705 455"/><path class="fluxo" d="M595 455 L705 455"/></g>
+</g>
+<g class="cabo real" id="cabo-real" role="button" tabindex="0" aria-label="Cabo Loja LAB ↔ Nuvem: clique para derrubar a nuvem">
+<path class="base" d="M595 215 C730 215 850 215 850 134"/>
+<path class="fluxo" d="M595 215 C730 215 850 215 850 134"/>
+<path class="alvo" d="M595 215 C730 215 850 215 850 134"/>
+<g class="corte" transform="translate(772 205)"><circle r="15"/><path d="M-6 -6 L6 6 M6 -6 L-6 6"/></g>
+<text class="rotulo-real" x="735" y="248" text-anchor="middle" id="rotulo-real">AO VIVO · clique para derrubar</text>
+</g>
+<g class="no sim" transform="translate(150 90)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">Matriz</text><text class="sub" y="12">6 lojas · ERP central</text><text class="selo" y="32">SIMULAÇÃO</text></g>
+<g class="no real" id="no-nuvem" transform="translate(850 90)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">Nuvem</text><text class="sub" y="12" id="topo-nuvem">—</text><text class="selo vivo" y="32">AO VIVO</text></g>
+<g class="no real" transform="translate(500 215)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">Loja LAB</text><text class="sub" y="12" id="topo-loja">—</text><text class="selo vivo" y="32">AO VIVO</text></g>
+<g class="no sim" transform="translate(500 335)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">Banco local</text><text class="sub" y="12">SQLite · outbox</text><text class="selo" y="32">SIMULAÇÃO</text></g>
+<g class="no sim" transform="translate(200 455)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">SSD</text><text class="sub" y="12">dados quentes</text><text class="selo" y="32">SIMULAÇÃO</text></g>
+<g class="no sim" transform="translate(500 455)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">HD</text><text class="sub" y="12">cópia diária</text><text class="selo" y="32">SIMULAÇÃO</text></g>
+<g class="no sim" transform="translate(800 455)"><rect x="-95" y="-44" width="190" height="88" rx="14"/><text class="titulo" y="-10">Backup protegido</text><text class="sub" y="12">isolado da produção</text><text class="selo" y="32">SIMULAÇÃO</text></g>
+</svg>
+<div class="topo-lado">
+<div class="caixa">
+<div class="rotulo-lado">Estado</div>
+<div class="topo-estado" id="topo-estado">—</div>
+<div class="topo-extra" id="topo-extra"></div>
+</div>
+<div class="caixa">
+<div class="rotulo-lado">Fila (outbox)</div>
+<div class="grande" id="topo-pendentes">0</div>
+<div class="sub">eventos pendentes</div>
+</div>
+<div class="caixa">
+<div class="rotulo-lado">Cabo Loja LAB ↔ Nuvem</div>
+<div class="topo-dica" id="topo-dica">Clique no cabo para derrubar a nuvem (corte de conexão).</div>
+</div>
+<ul class="legenda">
+<li><span class="amostra real"></span>Cabo real (LAB)</li>
+<li><span class="amostra sim"></span>Demais nós e cabos</li>
+<li><span class="amostra vazia"></span><span class="selo-sim">simulação</span></li>
+</ul>
+<p class="mensagem" role="status"></p>
+</div>
+</div>
+</section>
+
+</main>
+</div>
+<script src="painel.js"></script>
+</body>
+</html>

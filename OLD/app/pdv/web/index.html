@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Continuum PDV</title>
+<!-- Tudo local: sem fontes, ícones ou bibliotecas da internet. -->
+<link rel="stylesheet" href="pdv.css">
+<link rel="icon" type="image/png" href="logo.png">
+</head>
+<body>
+<div class="pdv">
+
+<header class="barra">
+<div class="marca"><img src="logo.png" alt=""><div><b>CONTINUUM <span>PDV</span></b><small id="caixa-nome">Caixa 01</small></div></div>
+<div class="conexao" id="conexao" data-situacao="">
+<span class="ponto"></span>
+<div><b id="conexao-titulo">Conectando…</b><small id="conexao-detalhe">procurando o LAB</small></div>
+</div>
+<div class="fila" title="Eventos da loja que ainda não chegaram na nuvem"><small>Fila para a nuvem</small><b id="fila">—</b></div>
+<button type="button" class="secundario" id="modo-estoque" aria-pressed="false">Repor estoque</button>
+<div class="relogio" id="relogio">--:--</div>
+</header>
+
+<main class="corpo">
+<section class="catalogo">
+<div class="busca">
+<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+<input type="search" id="busca" placeholder="Buscar produto ou código   (F2)" autocomplete="off" aria-label="Buscar produto">
+</div>
+<div class="aviso-estoque" id="aviso-estoque" hidden>Modo reposição: clique num produto para dar entrada no estoque.</div>
+<div class="demo" id="demo" hidden>
+<span>Poucos produtos no cadastro da loja.</span>
+<button type="button" id="cadastrar-demo">Cadastrar produtos de demonstração</button>
+</div>
+<div class="grade" id="produtos" aria-label="Produtos"></div>
+</section>
+
+<aside class="lado">
+<section class="carrinho cartao">
+<div class="cab"><h2>Venda atual</h2><button type="button" class="link" id="cancelar">Cancelar (Esc)</button></div>
+<ul class="itens" id="itens"><li class="vazio">Clique num produto para começar a venda.</li></ul>
+<div class="total"><span>Total</span><b id="total">R$ 0,00</b></div>
+<div class="pagamento">
+<label>Pagamento <select id="pagamento"><option value="dinheiro">Dinheiro</option><option value="cartao">Cartão</option><option value="pix">Pix</option></select></label>
+<label id="rotulo-recebido">Recebido <input type="text" id="recebido" inputmode="decimal" placeholder="0,00"></label>
+<div class="troco"><small>Troco</small><b id="troco">—</b></div>
+</div>
+<p class="nota">Pagamento e troco são só de tela: o cadastro da loja não guarda forma de pagamento.</p>
+<button type="button" class="finalizar" id="finalizar" disabled>Finalizar venda (F9)</button>
+<p class="mensagem" id="mensagem" role="alert"></p>
+</section>
+
+<section class="ultimas cartao">
+<div class="cab"><h2>Últimas vendas deste caixa</h2><small id="resumo-caixa">—</small></div>
+<ul id="ultimas"><li class="vazio">Nenhuma venda ainda.</li></ul>
+<div class="legenda"><span><i class="amarelo"></i>salva na loja, aguardando a nuvem</span><span><i class="verde"></i>na nuvem</span></div>
+</section>
+</aside>
+</main>
+</div>
+
+<!-- Cupom: abre depois da venda; a situação muda ao vivo quando o sync confirma. -->
+<div class="fundo" id="cupom-fundo" hidden>
+<div class="finalizada" role="dialog" aria-modal="true" aria-labelledby="fin-titulo">
+<section class="confirmacao" id="confirmacao">
+<div class="fin-cab"><span class="fin-ok" aria-hidden="true">✓</span><div><h2 id="fin-titulo">Venda finalizada</h2><small id="fin-quando">—</small></div></div>
+<div class="fin-rotulo">Código da venda</div>
+<div class="fin-codigo"><b id="fin-codigo">—</b><button type="button" class="secundario" id="fin-copiar">Copiar</button></div>
+<div class="fin-rotulo">Valor total</div>
+<div class="fin-total" id="fin-total">R$ 0,00</div>
+<dl class="fin-pag">
+<div><dt>Pagamento</dt><dd id="fin-forma">—</dd></div>
+<div><dt>Recebido</dt><dd id="fin-recebido">—</dd></div>
+<div class="troco-grande"><dt>Troco</dt><dd id="fin-troco">—</dd></div>
+</dl>
+<div class="fin-situacao" id="fin-situacao">—</div>
+<p class="fin-dica">Use o código para conferir a venda no Dashboard (Monitor do PDV).</p>
+<div class="botoes"><button type="button" id="cupom-fechar">Nova venda (Enter)</button></div>
+</section>
+<div class="papel" id="cupom-papel"></div>
+</div>
+</div>
+
+<div class="fundo" id="repor-fundo" hidden>
+<form class="dialogo" id="repor-form">
+<h2 id="repor-titulo">Repor estoque</h2>
+<p id="repor-texto"></p>
+<label>Quantidade de entrada <input type="number" id="repor-qtd" min="1" max="100000" value="24" required></label>
+<div class="botoes"><button type="submit">Dar entrada</button><button type="button" class="secundario" id="repor-cancelar">Cancelar</button></div>
+</form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="pdv.js"></script>
+</body>
+</html>

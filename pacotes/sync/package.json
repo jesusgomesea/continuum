@@ -1,0 +1,10 @@
+{
+  "name": "@continuum/sync",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fila (outbox), Sync Engine e máquina de estados",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

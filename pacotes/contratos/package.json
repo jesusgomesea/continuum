@@ -1,0 +1,10 @@
+{
+  "name": "@continuum/contratos",
+  "version": "0.0.0",
+  "private": true,
+  "description": "O \"idioma\" entre PDV, agente, ERP e Central",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
