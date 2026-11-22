@@ -8,3 +8,8 @@
 
 /** Nome do pacote (usado pelo teste do esqueleto, Passo 0.1). */
 export const PACOTE = 'agente';
+
+export * from './agente.ts';
+export * from './servidor.ts';
+export * from './conferencia.ts';
+export * from './teste-de-queda.ts';
