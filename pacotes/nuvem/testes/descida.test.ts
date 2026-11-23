@@ -99,6 +99,34 @@ describe('descida: ERP → caixa', () => {
     expect(await baixarAlteracoes(caixa, destino, credencial as string)).toBe(0);
   }, 60_000);
 
+  it('entrada e ajuste de estoque feitos no ERP descem para o caixa, sem contar em dobro', async () => {
+    const erp = navegador();
+    await erp('POST', '/v1/erp/entrar', ACESSOS_DE_DEMONSTRACAO.dono);
+    const { id: arroz } = (await erp('POST', '/v1/erp/produtos', { nome: 'Arroz 5 kg', precoCentavos: 2890 })).corpo as { id: string };
+    const loja = ((await erp('GET', '/v1/erp/loja')).corpo as { lojas: { id: string }[] }).lojas[0]?.id;
+    // Entrada ANTES de ativar o caixa: chega no saldo da ativação
+    expect((await erp('POST', '/v1/erp/estoque', { tipo: 'ENTRADA', quantidade: 10, produtoId: arroz, lojaId: loja })).status).toBe(201);
+    const { codigo } = (await erp('POST', '/v1/erp/caixas', { lojaId: loja })).corpo as { codigo: string };
+
+    const caixa = new Caixa(abrirBancoDoCaixa(':memory:'));
+    await ativarPelaNuvem(caixa, url, codigo);
+    const { destino, credencial } = destinoDaFila(caixa, null);
+    const sync = ligarSincronizacao(caixa, destino, { credencial: credencial as string, esperaOciosaMs: 20, intervaloSinalMs: 60_000, intervaloDescidaMs: 50 });
+    syncs.push(sync);
+    expect(caixa.saldo(arroz)).toBe(10);
+
+    // Entrada e ajuste DEPOIS da ativação: descem em segundos
+    await erp('POST', '/v1/erp/estoque', { tipo: 'ENTRADA', quantidade: 24, produtoId: arroz, lojaId: loja });
+    await esperarAte(() => caixa.saldo(arroz) === 34);
+    await erp('POST', '/v1/erp/estoque', { tipo: 'AJUSTE', quantidade: -4, motivo: 'quebra', produtoId: arroz, lojaId: loja });
+    await esperarAte(() => caixa.saldo(arroz) === 30);
+
+    // Nada é reaplicado nem sobe de volta para a nuvem
+    expect(await baixarAlteracoes(caixa, destino, credencial as string)).toBe(0);
+    expect(caixa.saldo(arroz)).toBe(30);
+    expect(caixa.fila.todos().filter((e) => e.tipo === 'estoque.movimentacao-registrada')).toHaveLength(0);
+  }, 60_000);
+
   it('sem credencial válida, a nuvem não entrega as mudanças', async () => {
     const r = await fetch(`${url}/v1/alteracoes?desde=0`, { headers: { authorization: 'Bearer credencial-falsa' } });
     expect(r.status).toBe(403);

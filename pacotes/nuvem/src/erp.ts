@@ -159,9 +159,16 @@ export function rotasDoErp(banco: BancoNuvem): Rota {
         if (loja === undefined) throw new RecusaDaNuvem(404, 'Loja não encontrada.');
         const atual = Number((await tx.consultarUma<{ s: string }>('SELECT COALESCE(sum(quantidade), 0) AS s FROM movimentacoes WHERE produto_id = $1 AND loja_id = $2', produtoId, lojaId))?.s);
         if (quantidade < 0 && atual + quantidade < 0) throw new RecusaDaNuvem(422, `O ajuste deixaria o estoque negativo (saldo na loja: ${atual}).`);
+        const movimentacaoId = gerarId();
         await tx.consultar(
           'INSERT INTO movimentacoes (id, cliente_id, loja_id, produto_id, tipo, quantidade, motivo, ocorrido_em) VALUES ($1, $2, $3, $4, $5, $6, $7, now())',
-          gerarId(), s.clienteId, lojaId, produtoId, tipo, quantidade, motivo || null,
+          movimentacaoId, s.clienteId, lojaId, produtoId, tipo, quantidade, motivo || null,
+        );
+        // Desce para os caixas da loja (Passo 3.3), na mesma transação: o caixa ativado depois já recebe
+        // o saldo com esta movimentação e o cursor além dela, então nada conta em dobro.
+        await tx.consultar(
+          "INSERT INTO alteracoes (cliente_id, entidade, entidade_id, versao, dados) VALUES ($1, 'estoque', $2, 1, $3)",
+          s.clienteId, movimentacaoId, JSON.stringify({ movimentacaoId, lojaId, produtoId, tipo, quantidade, motivo: motivo || null }),
         );
         return atual + quantidade;
       });

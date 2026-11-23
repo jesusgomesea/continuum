@@ -210,6 +210,23 @@ export class Caixa {
         const atual = this.parametros();
         // Mantém o que a alteração não trouxe (ex.: o PIN do supervisor e o comprovante anterior).
         this.aplicarParametros({ ...atual, ...p, comprovante: { ...COMPROVANTE_PADRAO, ...(atual.comprovante ?? {}), ...(p.comprovante ?? {}) } });
+      } else if (a.entidade === 'estoque') {
+        // Entrada ou ajuste feito no ERP. Só vale para a loja deste caixa, entra SEM evento na fila (já
+        // está na nuvem) e com o mesmo id da nuvem: se descer de novo, não conta em dobro.
+        const d = a.dados;
+        const tipo = String(d['tipo']);
+        const quantidade = Number(d['quantidade']);
+        const produtoId = String(d['produtoId']);
+        const daLoja = String(d['lojaId']) === this.configuracao('lojaId');
+        const produtoExiste = this.#banco.consultarUma('SELECT 1 FROM produtos WHERE id = ?', produtoId) !== undefined;
+        if (daLoja && produtoExiste && (tipo === 'ENTRADA' || tipo === 'AJUSTE') && Number.isSafeInteger(quantidade) && quantidade !== 0) {
+          this.#banco.rodar(
+            `INSERT INTO movimentacoes (id, loja_id, produto_id, tipo, quantidade, venda_id, motivo, dispositivo_id, ocorrido_em)
+             VALUES (?, ?, ?, ?, ?, NULL, ?, 'erp', ?) ON CONFLICT (id) DO NOTHING`,
+            String(d['movimentacaoId']), String(d['lojaId']), produtoId, tipo, quantidade,
+            d['motivo'] === null || d['motivo'] === undefined ? 'lançado no ERP' : String(d['motivo']), this.#agora(),
+          );
+        }
       }
       this.#banco.rodar(
         'INSERT INTO cursor_descida (unica, ultima_seq) VALUES (1, ?) ON CONFLICT (unica) DO UPDATE SET ultima_seq = excluded.ultima_seq',

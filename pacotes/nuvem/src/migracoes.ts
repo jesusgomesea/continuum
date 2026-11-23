@@ -299,11 +299,18 @@ const ISOLAMENTO = `
   ).join('\n')}
 `;
 
+// Migração 5: a entrada e o ajuste de estoque feitos no ERP também descem para os caixas da loja.
+const ESTOQUE_DESCE = `
+  ALTER TABLE alteracoes DROP CONSTRAINT alteracoes_entidade_check;
+  ALTER TABLE alteracoes ADD CONSTRAINT alteracoes_entidade_check CHECK (entidade IN ('produto', 'parametros', 'loja', 'estoque'));
+`;
+
 export const MIGRACOES_NUVEM: readonly MigracaoNuvem[] = [
   { numero: 1, nome: 'plataforma', sql: PLATAFORMA },
   { numero: 2, nome: 'operacao', sql: OPERACAO },
   { numero: 3, nome: 'sincronizacao', sql: SINCRONIZACAO },
   { numero: 4, nome: 'isolamento_por_cliente', sql: ISOLAMENTO },
+  { numero: 5, nome: 'estoque_desce', sql: ESTOQUE_DESCE },
 ];
 
 /** Aplica, cada uma na sua transação, as migrações que faltam. Recusa migração antiga editada. */

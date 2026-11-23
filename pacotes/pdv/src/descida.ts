@@ -1,6 +1,6 @@
 // Descida (Passo 3.3): o caixa pergunta à nuvem "o que mudou depois do nº N?" a cada poucos segundos e
 // aplica: produto novo ou preço alterado (vale a versão mais nova) e parâmetros do cliente (regra de
-// estoque, desconto, comprovante). O nº N fica guardado no caixa (cursor_descida): nada se repete, nada se pula.
+// estoque, desconto, comprovante) e a entrada ou o ajuste de estoque feitos no ERP para a loja deste caixa. O nº N fica guardado no caixa (cursor_descida): nada se repete, nada se pula.
 // Sem internet, o caixa segue com o que já tem; quando volta, recebe tudo o que mudou, em ordem.
 import type { RegraEstoque } from '@continuum/dominio';
 import type { Caixa } from './caixa.ts';
@@ -8,7 +8,7 @@ import type { ConfiguracaoComprovante } from './comprovante.ts';
 
 export interface Alteracao {
   seq: number;
-  entidade: 'produto' | 'parametros' | 'loja';
+  entidade: 'produto' | 'parametros' | 'loja' | 'estoque';
   versao: number;
   dados: Record<string, unknown>;
 }
