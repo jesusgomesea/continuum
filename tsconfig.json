@@ -16,6 +16,7 @@
     "pacotes/*/vite.*.config.ts",
     "pacotes/*/electron/**/*.ts",
     "pacotes/*/scripts/**/*.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "scripts/**/*.ts"
   ]
 }

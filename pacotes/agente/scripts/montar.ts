@@ -10,6 +10,7 @@ import path from 'node:path';
 import { build } from 'vite';
 
 const pastaAgente = path.resolve(import.meta.dirname, '..');
+const raizDoProjeto = path.resolve(pastaAgente, '..', '..');
 const pastaApp = path.join(pastaAgente, 'dist', 'app');
 const versaoElectron = (JSON.parse(readFileSync(path.join(pastaAgente, '..', 'pdv', 'package.json'), 'utf8')) as { devDependencies: Record<string, string> })
   .devDependencies['electron']?.replace(/^[^\d]*/, '');
@@ -53,8 +54,26 @@ await empacotar({
     files: ['principal.mjs', 'package.json', '!node_modules'],
     npmRebuild: false,
     asar: true,
-    win: { target: [{ target: 'portable', arch: ['x64'] }], signAndEditExecutable: false },
+    win: {
+        // Instalador (Setup.exe) e versão portátil. Sem certificado: o ícone entra, a assinatura digital não.
+        target: [{ target: 'nsis', arch: ['x64'] }, { target: 'portable', arch: ['x64'] }],
+        icon: path.join(raizDoProjeto, 'recursos', 'icone.ico'),
+        signExecutable: false,
+      },
+      // Instalação simples, por usuário (não pede senha de administrador): atalhos na área de trabalho e no
+      // menu Iniciar, desinstalador no Windows e o programa abre ao terminar.
+      nsis: {
+        oneClick: true,
+        perMachine: false,
+        createDesktopShortcut: 'always',
+        createStartMenuShortcut: true,
+        shortcutName: 'Continuum Agente',
+        runAfterFinish: true,
+        artifactName: 'Continuum-Agente-Setup.exe',
+        installerIcon: path.join(raizDoProjeto, 'recursos', 'icone.ico'),
+        uninstallerIcon: path.join(raizDoProjeto, 'recursos', 'icone.ico'),
+      },
     portable: { artifactName: 'agente-continuum.exe' },
   },
 });
-console.log(`Pronto: ${path.join(pastaAgente, 'dist', 'executavel', 'agente-continuum.exe')}`);
+console.log(`Pronto: ${path.join(pastaAgente, 'dist', 'executavel')} (instalador Continuum-Agente-Setup.exe e portátil agente-continuum.exe)`);

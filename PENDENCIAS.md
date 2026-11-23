@@ -33,6 +33,7 @@
 | **Passo 3.3** · Descida (preços → caixa) | `pacotes/nuvem`, `pacotes/pdv` | 🟡 **Parcial, aguardando validação** (formato MEI: preço, produto novo e parâmetros chegam ao caixa em segundos) |
 | **Passo 3.4** · Monitor ao vivo | `pacotes/nuvem` | 🟡 **Feito, aguardando validação** (Central vê cada caixa ao vivo; SEM SINAL depois de 45 s) |
 | **Passo 3.5** · Executáveis para o teste de conexão | `pacotes/*/dist/executavel` | 🟡 **Feito, aguardando validação** (`nuvem-continuum.exe`, `pdv-continuum.exe`, `agente-continuum.exe`) |
+| **Passo 4.2 (parte)** · Instaladores | `instaladores/` | 🟡 **Feito, aguardando validação** (Setup.exe da Nuvem, PDV e Agente; guia em `INSTALACAO.md`) |
 | **Adiantado do 3.2** · Sync Engine e agente da loja | `pacotes/sync`, `pacotes/agente` | 🟡 **Feito, aguardando validação** (caixa → agente pela rede, sem duplicar e sem perder; `agente-continuum.exe`) |
 
 ## 2. Próximo passo
@@ -242,6 +243,10 @@
   internet, segue com o que tem; na volta recebe tudo em ordem.
 - Provado (`pacotes/nuvem/testes/descida.test.ts`): preço alterado no ERP, produto novo e parâmetros
   do Central (regra de estoque, desconto, bobina) chegam ao caixa; nada é aplicado duas vezes.
+- **Corrigido em 22/11 (noite):** a entrada e o ajuste de estoque feitos no ERP não desciam para o
+  caixa (só o saldo da ativação chegava). Agora descem também (migração 5 da nuvem, `estoque_desce`),
+  com o mesmo id da nuvem e sem evento na fila, então não contam em dobro nem sobem de volta. Lançamentos
+  feitos antes da correção não descem: para esses, ative o caixa de novo (o saldo vem na ativação).
 - **Falta:** a descida passar pelo agente (loja com vários caixas) e o PIN do supervisor descer do ERP
   (hoje vale o padrão 1234).
 
@@ -282,6 +287,18 @@
   ERP e o estoque da nuvem bate com o dos caixas. **Aprovado.**
 - O teste achou um defeito no próprio Kryptonita (não repassava a credencial do caixa); corrigido.
 
+### Instaladores (22/11, fim do dia)
+
+- `npm run instaladores` gera `Continuum-Nuvem-Setup.exe`, `Continuum-PDV-Setup.exe` e
+  `Continuum-Agente-Setup.exe` na pasta `instaladores/` (fora do git). Guia para leigos: `INSTALACAO.md`.
+- Instalação por usuário, sem senha de administrador, com atalhos na área de trabalho e no menu Iniciar
+  e desinstalador. Ícone do Continuum (ampliado do logo de 64 px: um logo em alta resolução deixa mais
+  nítido). O agente instalado liga junto com o Windows.
+- Testado aqui: os três instalaram em silêncio; a nuvem instalada gerou o código, o PDV instalado ativou,
+  vendeu, a fila zerou e a venda apareceu no relatório; o agente respondeu; desinstalar e reinstalar ok.
+  **Os três ficaram instalados neste computador** (atalhos na área de trabalho), com os dados ainda vazios.
+- Falta: assinatura digital (o Windows mostra o aviso do SmartScreen) e a hospedagem da nuvem.
+
 ### Próximos passos (depois de 22/11)
 
 1. **Decidir o ponto 9 da seção 4** (como a nuvem sabe de qual caixa veio cada evento repassado pelo
@@ -299,7 +316,7 @@ O projeto exige **Node 26**.
 ```powershell
 .\dev instalar    # baixa as ferramentas (npm install)
 .\dev versao      # deve mostrar v26.x
-.\dev testar      # testes automáticos (hoje: 215 passando)
+.\dev testar      # testes automáticos (hoje: 216 passando)
 .\dev verificar   # tipos do TypeScript (hoje: nenhum erro)
 .\dev vitrine     # vitrine da interface em http://localhost:5173
 .\dev pdv         # o PDV no navegador em http://localhost:5174

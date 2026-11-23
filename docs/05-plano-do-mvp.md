@@ -89,7 +89,7 @@ coração do Local First e já dá uma demonstração completa sem internet; dep
 | Passo | O que faço | O que você vai ver | Pronto quando |
 |---|---|---|---|
 | 🟡 **4.1 Teste de queda** (22/11: caixa → agente e caixa → nuvem aprovados; falta agente → nuvem) | O simulador de falhas (Kryptonita) do OLD aplicado ao sistema novo: derruba a internet, vende, volta, confere | O relatório "nada se perdeu", como no LAB | Teste automático aprovado |
-| **4.2 Instalador e hospedagem** | Instalador do PDV e publicação da nuvem na opção A (camadas gratuitas) | Um endereço de verdade para o ERP e o Central | Acessível pela internet |
+| 🟡 **4.2 Instalador e hospedagem** (22/11: instaladores dos 3 programas feitos; hospedagem falta, precisa das contas) | Instalador do PDV e publicação da nuvem na opção A (camadas gratuitas) | Um endereço de verdade para o ERP e o Central | Acessível pela internet |
 | **4.3 Primeiro cliente** | Cadastro e treinamento de um cliente piloto, com manual simples | Uma loja real usando o Continuum | Um dia completo de vendas sem perda |
 
 ---

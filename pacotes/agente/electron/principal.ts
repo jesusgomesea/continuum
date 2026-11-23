@@ -10,6 +10,8 @@ import { abrirBancoDaLoja, Agente } from '../src/agente.ts';
 import { criarServidorDoAgente, ligar } from '../src/servidor.ts';
 
 async function iniciar(): Promise<void> {
+  // Instalado, o agente liga junto com o Windows: os caixas da loja dependem dele estar no ar.
+  if (app.isPackaged && process.env['CONTINUUM_AGENTE_DADOS'] === undefined) app.setLoginItemSettings({ openAtLogin: true });
   // CONTINUUM_AGENTE_DADOS e CONTINUUM_AGENTE_PORTA existem para testes e casos especiais.
   const pastaDeDados = process.env['CONTINUUM_AGENTE_DADOS'] ?? app.getPath('userData');
   mkdirSync(pastaDeDados, { recursive: true });

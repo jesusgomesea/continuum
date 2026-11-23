@@ -21,6 +21,8 @@ coverage/
 .vite/
 dist-vitrine/
 pacotes/*/dist/
+# Instaladores gerados (npm run instaladores): grandes demais para o git
+instaladores/
 
 # Segredos locais (o .env.demo do OLD não tem segredos e é versionado)
 .env
