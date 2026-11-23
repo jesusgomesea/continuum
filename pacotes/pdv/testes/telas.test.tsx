@@ -107,3 +107,74 @@ describe('caixa novo (Passo 3.1)', () => {
     await screen.findByRole('heading', { name: 'Abrir caixa' });
   });
 });
+
+describe('tela de venda: busca, atalhos, notas rápidas, CPF e espera', () => {
+  async function abrirCaixa() {
+    render(<App />);
+    await screen.findByRole('heading', { name: 'Abrir caixa' });
+    digitar(/Operador/, 'Ana');
+    fireEvent.click(screen.getByRole('button', { name: /Abrir caixa/ }));
+    return screen.findByLabelText('Buscar produto');
+  }
+
+  it('busca sem acento, Enter com código bipado, F2 quantidade, Delete tira o último', async () => {
+    const busca = await abrirCaixa();
+    fireEvent.change(busca, { target: { value: 'ACUCAR' } });
+    expect(screen.getAllByRole('button', { name: /Açúcar 1 kg/ })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /Café 500 g/ })).toBeNull();
+
+    // Código de barras do café + Enter: entra direto.
+    fireEvent.change(busca, { target: { value: '7890000000017' } });
+    fireEvent.keyDown(busca, { key: 'Enter' });
+    expect(screen.getByTestId('total').textContent).toBe('R$ 18,90');
+
+    // F2: 3 unidades do próximo item.
+    fireEvent.keyDown(window, { key: 'F2' });
+    fireEvent.change(screen.getByLabelText('Quantas unidades?'), { target: { value: '3' } });
+    fireEvent.keyDown(screen.getByLabelText('Quantas unidades?'), { key: 'Enter' });
+    fireEvent.change(busca, { target: { value: 'leite' } });
+    fireEvent.keyDown(busca, { key: 'Enter' });
+    expect(screen.getByTestId('total').textContent).toBe('R$ 33,87'); // 18,90 + 3 × 4,99
+
+    // "2*" na busca também multiplica.
+    fireEvent.change(busca, { target: { value: '2*biscoito' } });
+    fireEvent.keyDown(busca, { key: 'Enter' });
+    expect(screen.getByTestId('total').textContent).toBe('R$ 41,85');
+
+    // Delete tira o último item lançado (o biscoito).
+    fireEvent.keyDown(window, { key: 'Delete' });
+    expect(screen.getByTestId('total').textContent).toBe('R$ 33,87');
+  });
+
+  it('notas rápidas mostram o troco; CPF inválido trava e válido sai na venda', async () => {
+    const busca = await abrirCaixa();
+    fireEvent.change(busca, { target: { value: '7890000000017' } });
+    fireEvent.keyDown(busca, { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: 'R$ 20,00' }));
+    expect(screen.getByTestId('resumo-pagamento').textContent).toBe('Troco: R$ 1,10');
+
+    digitar(/CPF do cliente/, '529.982.247-24');
+    expect(screen.getByText(/CPF inválido/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: /Finalizar venda/ }) as HTMLButtonElement).disabled).toBe(true);
+    digitar(/CPF do cliente/, '529.982.247-25');
+    expect(screen.getByText('CPF 529.982.247-25')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Finalizar venda/ }));
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+  });
+
+  it('F6 põe a venda em espera e ela pode ser retomada', async () => {
+    const busca = await abrirCaixa();
+    fireEvent.change(busca, { target: { value: '7890000000017' } });
+    fireEvent.keyDown(busca, { key: 'Enter' });
+    fireEvent.keyDown(window, { key: 'F6' });
+    await waitFor(() => expect(screen.getByTestId('total').textContent).toBe('R$ 0,00'));
+    await screen.findByRole('button', { name: /Espera \(F6\) · 1/ });
+
+    fireEvent.click(screen.getByRole('button', { name: /Espera \(F6\)/ }));
+    const dialogo = await screen.findByRole('dialog');
+    expect(within(dialogo).getByText('Cliente 1')).toBeTruthy();
+    fireEvent.click(within(dialogo).getByRole('button', { name: 'Retomar' }));
+    await waitFor(() => expect(screen.getByTestId('total').textContent).toBe('R$ 18,90'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});

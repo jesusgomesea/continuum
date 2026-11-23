@@ -174,4 +174,22 @@ export const MIGRACOES_CAIXA: readonly Migracao[] = [
       ${somenteInclusao('chaves_venda')}
     `,
   },
+  {
+    numero: 5,
+    nome: 'vendas_em_espera',
+    sql: `
+      -- Venda em espera: o carrinho pausado para atender outro cliente. NÃO é venda (não tem número,
+      -- não baixa estoque, não gera evento): é só um rascunho local. Fica no banco para não se perder
+      -- se o caixa reiniciar; ao ser retomado, sai daqui e volta para a tela.
+      CREATE TABLE vendas_em_espera (
+        id             TEXT    PRIMARY KEY,
+        sessao_id      TEXT    NOT NULL REFERENCES sessoes_caixa (id),
+        rotulo         TEXT    NOT NULL,
+        conteudo       TEXT    NOT NULL CHECK (json_valid(conteudo)),
+        itens          INTEGER NOT NULL CHECK (itens >= 1),
+        total_centavos INTEGER NOT NULL CHECK (total_centavos >= 0),
+        criada_em      TEXT    NOT NULL
+      ) STRICT;
+    `,
+  },
 ];

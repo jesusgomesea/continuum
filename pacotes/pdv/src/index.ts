@@ -15,3 +15,5 @@ export * from './sincronizacao.ts';
 export * from './pin.ts';
 export * from './ativacao.ts';
 export * from './descida.ts';
+export * from './balanca.ts';
+export * from './busca.ts';

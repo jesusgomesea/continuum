@@ -1,9 +1,12 @@
 // Cliente da API da nuvem, usado pelas telas do Central e do ERP. A sessão vai no cookie (o navegador cuida).
 export class RecusaDaNuvem extends Error {
   readonly status: number;
-  constructor(status: number, mensagem: string) {
+  /** O corpo inteiro da resposta (ex.: a lista de linhas com problema da importação). */
+  readonly dados: Record<string, unknown>;
+  constructor(status: number, mensagem: string, dados: Record<string, unknown> = {}) {
     super(mensagem);
     this.status = status;
+    this.dados = dados;
   }
 }
 
@@ -15,7 +18,7 @@ export async function pedir<T>(metodo: 'GET' | 'POST' | 'PUT', caminho: string, 
     ...(corpo === undefined ? {} : { body: JSON.stringify(corpo) }),
   });
   const dados = (await r.json()) as { mensagem?: string };
-  if (!r.ok) throw new RecusaDaNuvem(r.status, dados.mensagem ?? 'Algo deu errado.');
+  if (!r.ok) throw new RecusaDaNuvem(r.status, dados.mensagem ?? 'Algo deu errado.', dados);
   return dados as T;
 }
 
@@ -38,6 +41,8 @@ export interface ClienteResumo {
   situacao: 'ativo' | 'suspenso';
   lojas: number;
   caixas_ativos: number;
+  plano: string;
+  pagamento: { situacao: 'isento' | 'sem-registro' | 'em-dia' | 'vence-logo' | 'atrasado'; dias: number };
 }
 
 export interface DetalheDoCliente {

@@ -19,7 +19,7 @@ const texto = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
 const objeto = (c: unknown): Objeto => (typeof c === 'object' && c !== null && !Array.isArray(c) ? (c as Objeto) : {});
 const UNIDADES = ['un', 'kg', 'l'];
 
-function lerProduto(c: Objeto) {
+export function lerProduto(c: Objeto) {
   const nome = texto(c['nome']);
   if (nome === '') throw new RecusaDaNuvem(400, 'Informe o nome do produto.');
   const precoCentavos = Number(c['precoCentavos']);
@@ -34,7 +34,7 @@ function lerProduto(c: Objeto) {
 }
 
 /** A mudança vai para a fila de descida: os caixas do cliente recebem o produto novo (Passo 3.3). */
-async function avisarDescidaDoProduto(tx: Transacao, clienteId: string, p: { id: string; version: number; nome: string; precoCentavos: number; unidade: string; ean: string | null }): Promise<void> {
+export async function avisarDescidaDoProduto(tx: Transacao, clienteId: string, p: { id: string; version: number; nome: string; precoCentavos: number; unidade: string; ean: string | null }): Promise<void> {
   await tx.consultar(
     "INSERT INTO alteracoes (cliente_id, entidade, entidade_id, versao, dados) VALUES ($1, 'produto', $2, $3, $4)",
     clienteId, p.id, p.version, JSON.stringify({ produtoId: p.id, nome: p.nome, precoCentavos: p.precoCentavos, unidade: p.unidade, ean: p.ean, version: p.version }),

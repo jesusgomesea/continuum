@@ -1,10 +1,12 @@
 // Continuum Central (tema escuro): a Equipe cadastra clientes (UC01) e parametriza o ERP de cada um (UC02).
 import { Botao, Cartao, Chip } from '@continuum/interface';
-import { Activity, Building2, LogOut, Plus, Save } from 'lucide-react';
+import { Activity, Building2, History, LogOut, Plus, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api } from '../api.ts';
 import type { ClienteResumo, DetalheDoCliente, Eu } from '../api.ts';
+import { CentralAuditoria } from './CentralAuditoria.tsx';
+import { FichaCliente, SITUACAO_DO_PAGAMENTO, textoDoPagamento } from './FichaCliente.tsx';
 import { MonitorAoVivo } from './Monitor.tsx';
 
 const formatarDocumento = (tipo: string, d: string) =>
@@ -13,7 +15,7 @@ const formatarDocumento = (tipo: string, d: string) =>
 export function Central({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
   const [clientes, setClientes] = useState<ClienteResumo[]>([]);
   const [aberto, setAberto] = useState<string | 'novo' | null>(null);
-  const [aba, setAba] = useState<'monitor' | 'clientes'>('monitor');
+  const [aba, setAba] = useState<'monitor' | 'clientes' | 'auditoria'>('monitor');
   const [aviso, setAviso] = useState<string | null>(null);
 
   const recarregar = useCallback(() => {
@@ -40,6 +42,9 @@ export function Central({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
           <button type="button" role="tab" aria-selected={aba === 'clientes'} onClick={() => setAba('clientes')}>
             <Building2 aria-hidden="true" /> Clientes
           </button>
+          <button type="button" role="tab" aria-selected={aba === 'auditoria'} onClick={() => setAba('auditoria')}>
+            <History aria-hidden="true" /> Auditoria
+          </button>
         </div>
         <div className="acoes">
           <Botao
@@ -61,6 +66,11 @@ export function Central({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
           <MonitorAoVivo />
         </main>
       )}
+      {aba === 'auditoria' && (
+        <main className="conteudo">
+          <CentralAuditoria />
+        </main>
+      )}
       {aba === 'clientes' && (
       <main className="conteudo duas-colunas">
         <Cartao titulo={`Clientes (${clientes.length})`} icone={<Building2 aria-hidden="true" />}>
@@ -78,6 +88,7 @@ export function Central({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
                     <Chip tom="neutro" ponto={false}>
                       {c.lojas} loja(s) · {c.caixas_ativos} caixa(s)
                     </Chip>
+                    {c.pagamento.situacao !== 'isento' && <Chip tom={SITUACAO_DO_PAGAMENTO[c.pagamento.situacao]?.tom ?? 'neutro'}>{textoDoPagamento(c.pagamento)}</Chip>}
                   </span>
                 </button>
               </li>
@@ -92,7 +103,12 @@ export function Central({ eu, aoSair }: { eu: Eu; aoSair: () => void }) {
             }}
           />
         )}
-        {aberto !== null && aberto !== 'novo' && <DetalheCliente key={aberto} id={aberto} aoMudar={recarregar} />}
+        {aberto !== null && aberto !== 'novo' && (
+          <div className="coluna" key={aberto}>
+            <DetalheCliente id={aberto} aoMudar={recarregar} />
+            <FichaCliente id={aberto} aoMudar={recarregar} />
+          </div>
+        )}
         {aberto === null && (
           <Cartao titulo="Selecione um cliente">
             <p className="suave">Escolha um cliente na lista para ver e parametrizar o ERP dele, ou cadastre um novo.</p>

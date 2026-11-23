@@ -84,7 +84,14 @@ export interface PacoteDeAtivacao {
   numeroCaixa: number | null;
   credencial: string;
   loja: { id: string; nomeReduzido: string; nome: string };
-  parametros: { versao: number; regraEstoque: RegraEstoque; limiteDescontoPct: number; comprovante: Partial<ConfiguracaoComprovante> };
+  parametros: {
+    versao: number;
+    regraEstoque: RegraEstoque;
+    limiteDescontoPct: number;
+    comprovante: Partial<ConfiguracaoComprovante>;
+    /** Hash do PIN do supervisor definido no ERP ("scrypt$sal$hash"). Ausente: vale o PIN padrão. */
+    pinSupervisorHash?: string;
+  };
   catalogo: { produtoId: string; nome: string; precoCentavos: number; unidade: 'un' | 'kg' | 'l'; ean: string | null; version: number; saldoNaLoja: number }[];
   cursorDescida: number;
 }
@@ -105,6 +112,23 @@ export interface ResumoDeVenda {
   ocorridoEm: string;
   sessaoId: string;
   cancelada: boolean;
+}
+
+/** O carrinho pausado (venda em espera): o que a tela precisa para retomar a venda. */
+export interface CarrinhoEmEspera {
+  itens: { produtoId: string; quantidade: number }[];
+  /** CPF/CNPJ como o operador digitou (é validado só ao finalizar a venda). */
+  documentoCliente: string;
+  /** Desconto no total, como o operador digitou (ex.: "2,50"). */
+  desconto: string;
+}
+
+export interface VendaEmEspera {
+  id: string;
+  rotulo: string;
+  itens: number;
+  totalCentavos: number;
+  criadaEm: string;
 }
 
 export interface OpcoesDoCaixa {
@@ -171,6 +195,9 @@ export class Caixa {
         regraEstoque: pacote.parametros.regraEstoque,
         limiteDescontoPct: pacote.parametros.limiteDescontoPct,
         comprovante: { ...COMPROVANTE_PADRAO, ...pacote.parametros.comprovante },
+        ...(typeof pacote.parametros.pinSupervisorHash === 'string' && pacote.parametros.pinSupervisorHash !== ''
+          ? { pinSupervisorHash: pacote.parametros.pinSupervisorHash }
+          : {}),
       });
       for (const p of pacote.catalogo) {
         this.receberProduto({ produtoId: p.produtoId, nome: p.nome, precoCentavos: p.precoCentavos, unidade: p.unidade, ean: p.ean, version: p.version });
@@ -388,6 +415,69 @@ export class Caixa {
         this.#agora(), contadoCentavos, relatorio.esperadoCentavos, JSON.stringify(relatorio), sessao.id,
       );
       return relatorio;
+    });
+  }
+
+  // ============================================================ venda em espera
+
+  /**
+   * Pausa o carrinho para atender outro cliente. Não é venda: não tem número, não mexe no estoque e
+   * não vai para a fila. O total guardado é só para a lista (ao finalizar, o caixa confere tudo de novo).
+   */
+  guardarEmEspera(carrinho: CarrinhoEmEspera, rotulo?: string): VendaEmEspera {
+    return this.#banco.transacao(() => {
+      const sessao = this.#exigirSessao();
+      const itens = lerItensDoCarrinho(carrinho.itens);
+      const conteudo: CarrinhoEmEspera = {
+        itens,
+        documentoCliente: typeof carrinho.documentoCliente === 'string' ? carrinho.documentoCliente.slice(0, 32) : '',
+        desconto: typeof carrinho.desconto === 'string' ? carrinho.desconto.slice(0, 32) : '',
+      };
+      let total = 0;
+      for (const i of itens) {
+        const p = this.#banco.consultarUma('SELECT preco_centavos FROM produtos WHERE id = ?', i.produtoId);
+        if (p === undefined) throw new DadosInvalidosError(`Produto não encontrado: ${i.produtoId}`);
+        total += Number(p['preco_centavos']) * i.quantidade;
+      }
+      const ja = Number(this.#banco.consultarUma('SELECT COUNT(*) AS n FROM vendas_em_espera WHERE sessao_id = ?', sessao.id)?.['n'] ?? 0);
+      const espera: VendaEmEspera = {
+        id: this.#gerarId(),
+        rotulo: typeof rotulo === 'string' && rotulo.trim() !== '' ? rotulo.trim().slice(0, 40) : `Cliente ${ja + 1}`,
+        itens: itens.reduce((s, i) => s + i.quantidade, 0),
+        totalCentavos: total,
+        criadaEm: this.#agora(),
+      };
+      this.#banco.rodar(
+        'INSERT INTO vendas_em_espera (id, sessao_id, rotulo, conteudo, itens, total_centavos, criada_em) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        espera.id, sessao.id, espera.rotulo, JSON.stringify(conteudo), espera.itens, espera.totalCentavos, espera.criadaEm,
+      );
+      return espera;
+    });
+  }
+
+  /** As vendas em espera da sessão aberta, da mais antiga para a mais nova. */
+  vendasEmEspera(): VendaEmEspera[] {
+    const sessao = this.#sessaoAberta();
+    if (sessao === undefined) return [];
+    return this.#banco
+      .consultar('SELECT id, rotulo, itens, total_centavos, criada_em FROM vendas_em_espera WHERE sessao_id = ? ORDER BY criada_em, rowid', sessao.id)
+      .map((l) => ({
+        id: String(l['id']),
+        rotulo: String(l['rotulo']),
+        itens: Number(l['itens']),
+        totalCentavos: Number(l['total_centavos']),
+        criadaEm: String(l['criada_em']),
+      }));
+  }
+
+  /** Retoma a venda em espera: devolve o carrinho e tira da lista (o rascunho volta para a tela). */
+  retomarDaEspera(id: string): CarrinhoEmEspera {
+    return this.#banco.transacao(() => {
+      const sessao = this.#exigirSessao();
+      const l = this.#banco.consultarUma('SELECT conteudo FROM vendas_em_espera WHERE id = ? AND sessao_id = ?', id, sessao.id);
+      if (l === undefined) throw new DadosInvalidosError('Venda em espera não encontrada (já foi retomada?).');
+      this.#banco.rodar('DELETE FROM vendas_em_espera WHERE id = ?', id);
+      return JSON.parse(String(l['conteudo'])) as CarrinhoEmEspera;
     });
   }
 
@@ -628,6 +718,20 @@ export class Caixa {
       diferencaCentavos: contadoCentavos === null ? null : contadoCentavos - esperado,
     };
   }
+}
+
+/** Confere os itens do carrinho em espera: produto (texto) e quantidade inteira positiva. */
+function lerItensDoCarrinho(itens: unknown): { produtoId: string; quantidade: number }[] {
+  if (!Array.isArray(itens) || itens.length === 0) throw new DadosInvalidosError('Venda em espera sem itens.');
+  return itens.map((i: unknown, n) => {
+    const item = (typeof i === 'object' && i !== null ? i : {}) as Record<string, unknown>;
+    const produtoId = item['produtoId'];
+    const quantidade = item['quantidade'];
+    if (typeof produtoId !== 'string' || typeof quantidade !== 'number' || !Number.isSafeInteger(quantidade) || quantidade < 1) {
+      throw new DadosInvalidosError(`itens[${n}]: informe o produto e uma quantidade inteira positiva`);
+    }
+    return { produtoId, quantidade };
+  });
 }
 
 function lerSessao(l: Linha): Sessao {

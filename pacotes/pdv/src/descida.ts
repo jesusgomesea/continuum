@@ -51,13 +51,24 @@ export function ligarDescida(caixa: Caixa, urlNuvem: string, credencial: string,
   return { agora: rodada, parar: () => clearInterval(relogio) };
 }
 
-/** Converte os dados de uma alteração de parâmetros no formato do caixa. */
-export function parametrosDaAlteracao(a: Alteracao): { versao: number; regraEstoque: RegraEstoque; limiteDescontoPct: number; comprovante?: ConfiguracaoComprovante } {
+/**
+ * Converte os dados de uma alteração de parâmetros no formato do caixa.
+ * O PIN do supervisor desce do ERP já como hash ("scrypt$sal$hash", ver pin.ts): só vem quando foi
+ * definido ou trocado. Ausente = o caixa mantém o que já tem (aplicarAlteracao faz ...atual, ...p).
+ */
+export function parametrosDaAlteracao(a: Alteracao): {
+  versao: number;
+  regraEstoque: RegraEstoque;
+  limiteDescontoPct: number;
+  comprovante?: ConfiguracaoComprovante;
+  pinSupervisorHash?: string;
+} {
   const d = a.dados;
   return {
     versao: a.versao,
     regraEstoque: d['regraEstoque'] === 'permitir_alerta' ? 'permitir_alerta' : 'bloquear',
     limiteDescontoPct: Number(d['limiteDescontoPct'] ?? 10),
     ...(typeof d['comprovante'] === 'object' && d['comprovante'] !== null ? { comprovante: d['comprovante'] as ConfiguracaoComprovante } : {}),
+    ...(typeof d['pinSupervisorHash'] === 'string' && d['pinSupervisorHash'] !== '' ? { pinSupervisorHash: d['pinSupervisorHash'] } : {}),
   };
 }

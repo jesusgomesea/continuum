@@ -25,6 +25,16 @@ export function senhaConfere(senha: string, hash: string): boolean {
   return timingSafeEqual(esperado, scryptSync(senha.normalize('NFC'), Buffer.from(salHex, 'hex'), esperado.length));
 }
 
+/**
+ * Hash do PIN do supervisor no MESMO formato que o caixa confere (pacotes/pdv/src/pin.ts):
+ * "scrypt$sal$hash" com chave de 32 bytes. O PIN em texto nunca é guardado nem desce.
+ */
+export function hashDoPinDoSupervisor(pin: string): string {
+  if (!/^\d{4,8}$/.test(pin)) throw new RangeError('O PIN deve ter de 4 a 8 números.');
+  const sal = randomBytes(16);
+  return `scrypt$${sal.toString('hex')}$${scryptSync(pin, sal, 32).toString('hex')}`;
+}
+
 // ============================================================ perfis e permissões
 
 /** Perfis do ERP do cliente (docs/04, tabela usuarios) e da Equipe Continuum (Central). */

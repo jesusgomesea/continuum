@@ -89,3 +89,23 @@ describe('clique duplo (chave da venda)', () => {
     expect(() => caixa.registrarVenda({ ...base, chave: 'x' })).toThrow(/chave/);
   });
 });
+
+describe('PIN do supervisor descendo do ERP', () => {
+  it('a alteração de parâmetros com o hash troca o PIN; sem o campo, o PIN definido é mantido', () => {
+    const { caixa, p } = caixaAberto();
+    const vender = () =>
+      caixa.registrarVenda({ itens: [{ produtoId: p.id, quantidade: 1 }], pagamentos: [{ forma: 'pix', valorCentavos: p.precoCentavos }] }).venda;
+
+    caixa.aplicarAlteracao({ seq: 1, entidade: 'parametros', versao: 2, dados: { regraEstoque: 'bloquear', limiteDescontoPct: 10, pinSupervisorHash: hashDoPin('9876') } });
+    const primeira = vender();
+    expect(() => caixa.cancelarVenda(primeira.codigo, 'Desistiu', 'Carla', '1234')).toThrow(/não confere/);
+    caixa.cancelarVenda(primeira.codigo, 'Desistiu', 'Carla', '9876');
+    expect(caixa.buscarVenda(primeira.codigo)?.cancelada).toBe(true);
+
+    // Nova versão dos parâmetros sem o PIN: o 9876 continua valendo.
+    caixa.aplicarAlteracao({ seq: 2, entidade: 'parametros', versao: 3, dados: { regraEstoque: 'bloquear', limiteDescontoPct: 15 } });
+    const segunda = vender();
+    expect(() => caixa.cancelarVenda(segunda.codigo, 'Desistiu', 'Carla', '1234')).toThrow(/não confere/);
+    caixa.cancelarVenda(segunda.codigo, 'Desistiu', 'Carla', '9876');
+  });
+});

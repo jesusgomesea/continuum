@@ -305,12 +305,58 @@ const ESTOQUE_DESCE = `
   ALTER TABLE alteracoes ADD CONSTRAINT alteracoes_entidade_check CHECK (entidade IN ('produto', 'parametros', 'loja', 'estoque'));
 `;
 
+// Migração 6: gestão no ERP e acompanhamento no Central.
+//   - PIN do supervisor definido no ERP (só o hash; desce para os caixas nos parâmetros)
+//   - plano e cobrança de cada cliente (mensalidade, vencimento, pago até) e os pagamentos registrados
+//   - histórico de conexão de cada caixa (mudança de estado e volta depois de ficar sem sinal)
+const GESTAO_E_CENTRAL = `
+  ALTER TABLE parametros_cliente ADD COLUMN pin_supervisor_hash text;
+
+  ALTER TABLE clientes ADD COLUMN mensalidade_centavos bigint NOT NULL DEFAULT 0 CHECK (mensalidade_centavos >= 0);
+  ALTER TABLE clientes ADD COLUMN dia_vencimento integer NOT NULL DEFAULT 10 CHECK (dia_vencimento BETWEEN 1 AND 28);
+  ALTER TABLE clientes ADD COLUMN pago_ate date;
+  ALTER TABLE clientes ADD COLUMN suspenso_por text CHECK (suspenso_por IN ('equipe', 'inadimplencia'));
+
+  CREATE TABLE pagamentos_plano (
+    id             uuid PRIMARY KEY,
+    cliente_id     uuid NOT NULL REFERENCES clientes (id),
+    referencia     text NOT NULL CHECK (referencia ~ '^[0-9]{4}-[0-9]{2}$'),
+    valor_centavos bigint NOT NULL CHECK (valor_centavos > 0),
+    registrado_por uuid NOT NULL,
+    pago_em        timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (cliente_id, referencia)
+  );
+  ${somenteInclusao('pagamentos_plano')}
+  GRANT SELECT ON pagamentos_plano TO continuum_central;
+
+  CREATE TABLE eventos_de_conexao (
+    id                 uuid PRIMARY KEY,
+    cliente_id         uuid NOT NULL REFERENCES clientes (id),
+    dispositivo_id     uuid NOT NULL REFERENCES dispositivos (id),
+    tipo               text NOT NULL CHECK (tipo IN ('estado', 'retorno')),
+    estado_anterior    text,
+    estado             text NOT NULL,
+    segundos_sem_sinal integer,
+    em                 timestamptz NOT NULL DEFAULT now()
+  );
+  ${somenteInclusao('eventos_de_conexao')}
+  CREATE INDEX eventos_de_conexao_por_dispositivo ON eventos_de_conexao (dispositivo_id, em);
+  GRANT SELECT, INSERT ON eventos_de_conexao TO continuum_app;
+  GRANT SELECT ON eventos_de_conexao TO continuum_central;
+  ALTER TABLE eventos_de_conexao ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE eventos_de_conexao FORCE ROW LEVEL SECURITY;
+  CREATE POLICY so_do_cliente ON eventos_de_conexao TO continuum_app
+    USING (cliente_id = ${CLIENTE_DO_PEDIDO}) WITH CHECK (cliente_id = ${CLIENTE_DO_PEDIDO});
+  CREATE POLICY central_le_tudo ON eventos_de_conexao FOR SELECT TO continuum_central USING (true);
+`;
+
 export const MIGRACOES_NUVEM: readonly MigracaoNuvem[] = [
   { numero: 1, nome: 'plataforma', sql: PLATAFORMA },
   { numero: 2, nome: 'operacao', sql: OPERACAO },
   { numero: 3, nome: 'sincronizacao', sql: SINCRONIZACAO },
   { numero: 4, nome: 'isolamento_por_cliente', sql: ISOLAMENTO },
   { numero: 5, nome: 'estoque_desce', sql: ESTOQUE_DESCE },
+  { numero: 6, nome: 'gestao_e_central', sql: GESTAO_E_CENTRAL },
 ];
 
 /** Aplica, cada uma na sua transação, as migrações que faltam. Recusa migração antiga editada. */

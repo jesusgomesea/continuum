@@ -21,3 +21,5 @@ export * from './erp.ts';
 export * from './erp-caixas.ts';
 export * from './dispositivos.ts';
 export * from './recebimento.ts';
+export * from './erp-gestao.ts';
+export * from './central-gestao.ts';

@@ -1,6 +1,6 @@
 // ERP · Loja e comprovante (Passo 2.4, UC10): dados da loja e o que sai impresso no comprovante dos caixas.
 import { Botao, Cartao } from '@continuum/interface';
-import { Save } from 'lucide-react';
+import { Save, ShieldCheck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { pedir } from '../api.ts';
@@ -63,6 +63,7 @@ export function ErpLoja() {
         </form>
       </Cartao>
       <div className="coluna">
+        <PinDoSupervisor />
         {lojas.map((l) => (
           <FormLoja key={l.id} loja={l} />
         ))}
@@ -108,6 +109,64 @@ function FormLoja({ loja }: { loja: Loja }) {
         {msg !== null && <p className={msg.ok ? 'ok' : 'aviso'}>{msg.texto}</p>}
         <Botao type="submit" variante="secundario" icone={<Save aria-hidden="true" />}>
           Salvar loja
+        </Botao>
+      </form>
+    </Cartao>
+  );
+}
+
+/**
+ * PIN do supervisor: libera desconto acima do limite e cancelamento de venda no caixa. Só o hash vai
+ * para a nuvem e para os caixas (chega em segundos). Enquanto não for definido, vale o padrão 1234.
+ */
+function PinDoSupervisor() {
+  const [definido, setDefinido] = useState<boolean | null>(null);
+  const [pin, setPin] = useState('');
+  const [confirmacao, setConfirmacao] = useState('');
+  const [msg, setMsg] = useState<{ ok: boolean; texto: string } | null>(null);
+  useEffect(() => {
+    pedir<{ definido: boolean }>('GET', '/v1/erp/pin')
+      .then((r) => setDefinido(r.definido))
+      .catch(() => setDefinido(null));
+  }, []);
+
+  function salvar(e: FormEvent) {
+    e.preventDefault();
+    if (pin !== confirmacao) {
+      setMsg({ ok: false, texto: 'Os dois PINs não são iguais.' });
+      return;
+    }
+    pedir('PUT', '/v1/erp/pin', { pin })
+      .then(() => {
+        setMsg({ ok: true, texto: 'PIN definido. Os caixas passam a pedir o PIN novo em poucos segundos.' });
+        setDefinido(true);
+        setPin('');
+        setConfirmacao('');
+      })
+      .catch((erro: Error) => setMsg({ ok: false, texto: erro.message }));
+  }
+
+  return (
+    <Cartao titulo="PIN do supervisor" icone={<ShieldCheck aria-hidden="true" />}>
+      <form className="formulario" onSubmit={salvar}>
+        <p className="suave">
+          Pedido no caixa para dar desconto acima do limite e cancelar venda.{' '}
+          {definido === false && <strong className="texto-atencao">Ainda vale o PIN padrão 1234: troque.</strong>}
+          {definido === true && 'Já definido; pode trocar quando quiser.'}
+        </p>
+        <div className="linha-form">
+          <label>
+            Novo PIN (4 a 8 números)
+            <input type="password" inputMode="numeric" pattern="[0-9]{4,8}" value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))} required autoComplete="new-password" />
+          </label>
+          <label>
+            Repita o PIN
+            <input type="password" inputMode="numeric" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value.replace(/\D/g, ''))} required autoComplete="new-password" />
+          </label>
+        </div>
+        {msg !== null && <p className={msg.ok ? 'ok' : 'aviso'}>{msg.texto}</p>}
+        <Botao type="submit" variante="secundario" icone={<ShieldCheck aria-hidden="true" />}>
+          Definir PIN
         </Botao>
       </form>
     </Cartao>

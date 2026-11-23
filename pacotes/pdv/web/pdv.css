@@ -138,7 +138,7 @@ input:not([type='checkbox']):not([type='radio']) {
 .produto {
   display: grid;
   gap: var(--espaco-1);
-  min-height: 96px;
+  min-height: 112px;
   padding: var(--espaco-3);
   text-align: left;
   border: 1px solid var(--cor-borda);
@@ -207,8 +207,8 @@ input:not([type='checkbox']):not([type='radio']) {
 .pagos button {
   display: inline-grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: var(--toque-minimo);
+  height: var(--toque-minimo);
   border: 1px solid var(--cor-borda);
   border-radius: var(--raio-p);
   background: var(--cor-superficie-2);
@@ -218,8 +218,8 @@ input:not([type='checkbox']):not([type='radio']) {
 
 .quantidade svg,
 .pagos svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
 }
 
 .valor {
@@ -285,9 +285,32 @@ input:not([type='checkbox']):not([type='radio']) {
   margin-left: auto;
 }
 
+/* Falta / troco: o número que o operador fala ao cliente, bem grande. */
 .resumo-pagamento {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   margin: 0;
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-m);
   font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+}
+
+.resumo-pagamento strong {
+  font-size: var(--texto-3xl);
+  font-weight: var(--peso-extra);
+  font-variant-numeric: tabular-nums;
+}
+
+.resumo-pagamento.falta {
+  background: var(--cor-atencao-fundo);
+  color: var(--cor-atencao);
+}
+
+.resumo-pagamento.troco {
+  background: var(--cor-sucesso-fundo);
+  color: var(--cor-sucesso);
 }
 
 /* ------------------------------------------------------------ últimas vendas */
@@ -404,6 +427,229 @@ input:not([type='checkbox']):not([type='radio']) {
 
 .relatorio .diferenca.ok {
   color: var(--cor-sucesso);
+}
+
+/* ------------------------------------------------------------ venda: busca, atalhos, toque */
+.linha-busca {
+  display: flex;
+  gap: var(--espaco-2);
+}
+
+.linha-busca .busca {
+  flex: 1;
+  min-height: 56px;
+  font-size: var(--texto-lg);
+}
+
+.multiplicador {
+  min-width: 72px;
+  border: 1px solid var(--cor-primaria);
+  border-radius: var(--raio-p);
+  background: var(--cor-primaria-fundo);
+  color: var(--cor-texto);
+  font: inherit;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-forte);
+  cursor: pointer;
+}
+
+/* Legenda discreta dos atalhos de teclado. */
+.atalhos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espaco-1) var(--espaco-4);
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+kbd {
+  padding: 0 var(--espaco-1);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-p);
+  background: var(--cor-superficie-2);
+  font-family: var(--fonte-mono);
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+/* Estoque baixo e sem estoque no cartão do produto. */
+.produto .preco small {
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-fraco);
+}
+
+.produto .saldo.baixo {
+  color: var(--cor-atencao);
+  font-weight: var(--peso-medio);
+}
+
+.produto .saldo.sem {
+  color: var(--cor-erro);
+  font-weight: var(--peso-medio);
+}
+
+.produto.baixo {
+  border-color: var(--cor-atencao);
+}
+
+.produto.sem {
+  border-color: var(--cor-erro);
+  background: var(--cor-erro-fundo);
+}
+
+/* O total da venda, bem grande, no topo do carrinho. */
+.total-destaque {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--espaco-3) var(--espaco-4);
+  border-radius: var(--raio-m);
+  background: var(--cor-primaria-fundo);
+}
+
+.total-destaque span {
+  color: var(--cor-texto-suave);
+  font-size: var(--texto-lg);
+}
+
+.total-destaque strong {
+  font-size: var(--texto-3xl);
+  font-weight: var(--peso-extra);
+  font-variant-numeric: tabular-nums;
+}
+
+.itens li {
+  padding: var(--espaco-1) var(--espaco-2);
+  border-radius: var(--raio-p);
+  cursor: pointer;
+}
+
+.itens li.selecionado {
+  outline: 2px solid var(--cor-primaria);
+  background: var(--cor-superficie-2);
+}
+
+/* Item que acabou de entrar: um brilho curto. */
+.itens li.entrou {
+  animation: item-entrou 0.45s ease-out;
+}
+
+@keyframes item-entrou {
+  from {
+    background: var(--cor-primaria-fundo);
+    transform: translateX(-6px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+label.invalido input {
+  border-color: var(--cor-erro);
+}
+
+label small.ok {
+  color: var(--cor-sucesso);
+}
+
+label small.erro {
+  color: var(--cor-erro);
+}
+
+/* Notas rápidas do pagamento em dinheiro. */
+.notas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: var(--espaco-2);
+}
+
+.nota {
+  min-height: var(--toque-minimo);
+  border: 1px solid var(--cor-borda);
+  border-radius: var(--raio-p);
+  background: var(--cor-sucesso-fundo);
+  color: var(--cor-sucesso);
+  font: inherit;
+  font-weight: var(--peso-forte);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nota.exato {
+  background: var(--cor-superficie-2);
+  color: var(--cor-texto);
+}
+
+.nota:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Lista de vendas em espera. */
+.lista-espera {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--espaco-2);
+}
+
+.lista-espera li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--espaco-3);
+  padding: var(--espaco-2) var(--espaco-3);
+  border-radius: var(--raio-p);
+  background: var(--cor-superficie-2);
+}
+
+.lista-espera li > span:first-child {
+  display: grid;
+}
+
+.lista-espera small {
+  color: var(--cor-texto-fraco);
+}
+
+/* ------------------------------------------------------------ conexão no cabeçalho */
+/* Saudável: discreta (um ponto verde). Offline/degradado: a faixa chama a atenção. */
+.conexao-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espaco-2);
+  color: var(--cor-texto-fraco);
+}
+
+.conexao-ok .ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--raio-pilula);
+  background: var(--estado-saudavel);
+}
+
+.faixa.chamativa > * {
+  outline: 2px solid var(--estado-offline);
+  animation: faixa-pulsa 1.6s ease-in-out infinite;
+}
+
+.faixa.chamativa[data-estado='degradado'] > * {
+  outline-color: var(--estado-degradado);
+}
+
+@keyframes faixa-pulsa {
+  50% {
+    outline-offset: 3px;
+  }
+}
+
+/* Quem pediu menos movimento no sistema não vê animação nenhuma. */
+@media (prefers-reduced-motion: reduce) {
+  .itens li.entrou,
+  .faixa.chamativa > * {
+    animation: none;
+  }
 }
 
 /* ------------------------------------------------------------ telas estreitas */

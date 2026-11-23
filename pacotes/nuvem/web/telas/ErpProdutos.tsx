@@ -5,6 +5,8 @@ import { History, PackagePlus, Save } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { pedir } from '../api.ts';
+import { TabelaDados } from '../componentes/Tabela.tsx';
+import { ImportarProdutos } from './ErpImportar.tsx';
 
 interface Produto {
   id: string;
@@ -55,36 +57,26 @@ export function ErpProdutos({ podeEditar }: { podeEditar: boolean }) {
     <div className="duas-colunas">
       <div className="coluna">
         {podeEditar && <NovoProduto aoCriar={carregar} />}
+        {podeEditar && <ImportarProdutos lojas={lojas} aoImportar={carregar} />}
         <Cartao titulo={`Produtos (${produtos.length})`}>
           {aviso !== null && <p className="aviso">{aviso}</p>}
-          <table className="tabela">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Preço</th>
-                <th>Estoque</th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtos.map((p) => (
-                <tr key={p.id} className={p.id === escolhido ? 'selecionada' : ''} onClick={() => setEscolhido(p.id)}>
-                  <td>
-                    <button type="button" className="link">
-                      {p.nome}
-                    </button>
-                    {p.ean !== null && <small className="suave"> {p.ean}</small>}
-                  </td>
-                  <td>{formatarReais(p.precoCentavos)}</td>
-                  <td>
-                    <Chip tom={p.saldo <= 0 ? 'erro' : p.saldo <= p.estoqueMinimo ? 'atencao' : 'sucesso'}>
-                      {p.saldo} {p.unidade}
-                    </Chip>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {produtos.length === 0 && <p className="suave">Nenhum produto ainda. Cadastre o primeiro.</p>}
+          <TabelaDados
+            chave={(p) => p.id}
+            linhas={produtos}
+            selecionada={escolhido}
+            aoEscolher={(p) => setEscolhido(p.id)}
+            vazio="Nenhum produto ainda. Cadastre o primeiro ou importe uma planilha."
+            colunas={[
+              { titulo: 'Produto', valor: (p) => `${p.nome} ${p.ean ?? ''}`, mostrar: (p) => <>{p.nome}{p.ean !== null && <small className="suave"> {p.ean}</small>}</> },
+              { titulo: 'Preço', valor: (p) => p.precoCentavos, mostrar: (p) => formatarReais(p.precoCentavos), numerica: true },
+              {
+                titulo: 'Estoque',
+                valor: (p) => p.saldo,
+                mostrar: (p) => <Chip tom={p.saldo <= 0 ? 'erro' : p.saldo <= p.estoqueMinimo ? 'atencao' : 'sucesso'}>{`${p.saldo} ${p.unidade}`}</Chip>,
+                numerica: true,
+              },
+            ]}
+          />
         </Cartao>
       </div>
       {produto === null ? (

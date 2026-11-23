@@ -11,6 +11,7 @@ import type { BancoNuvem, Transacao } from './banco.ts';
 import { RecusaDaNuvem } from './api.ts';
 import type { Rota } from './api.ts';
 import { hashDaSenha, senhaAceitavel } from './seguranca.ts';
+import { aplicarInadimplencia, situacaoDoPlano } from './central-gestao.ts';
 
 const SEGMENTOS = ['mercearia', 'padaria', 'conveniencia', 'hortifruti', 'farmacia', 'outro'] as const;
 const PADRAO_DOMINIO = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
@@ -69,7 +70,10 @@ export function rotasDoCentral(banco: BancoNuvem): Rota {
                     AND NOT EXISTS (SELECT 1 FROM cancelamentos x WHERE x.venda_id = v.id)) AS "vendasHoje",
                  (SELECT COALESCE(sum(v.liquido_centavos), 0)::int FROM vendas v WHERE v.dispositivo_id = d.id
                     AND (v.ocorrido_em AT TIME ZONE 'America/Sao_Paulo')::date = (now() AT TIME ZONE 'America/Sao_Paulo')::date
-                    AND NOT EXISTS (SELECT 1 FROM cancelamentos x WHERE x.venda_id = v.id)) AS "vendidoHojeCentavos"
+                    AND NOT EXISTS (SELECT 1 FROM cancelamentos x WHERE x.venda_id = v.id)) AS "vendidoHojeCentavos",
+                 (SELECT count(*)::int FROM eventos_de_conexao e WHERE e.dispositivo_id = d.id AND e.tipo = 'retorno'
+                    AND e.em > now() - interval '24 hours') AS "quedas24h",
+                 c.situacao AS "situacaoCliente"
           FROM dispositivos d JOIN clientes c ON c.id = d.cliente_id JOIN lojas l ON l.id = d.loja_id
           LEFT JOIN sinais_de_vida sv ON sv.dispositivo_id = d.id
           WHERE d.situacao = 'ativo'
@@ -80,7 +84,13 @@ export function rotasDoCentral(banco: BancoNuvem): Rota {
         const semSinal = s === null || s === undefined || Number(s) > SEGUNDOS_ATE_SEM_SINAL;
         return { ...cx, situacao: semSinal ? 'sem-sinal' : String(cx['estado']) };
       });
+      // A versão mais nova em uso: caixa com versão anterior aparece como "desatualizado" no monitor.
+      const versoes = comSituacao.map((c) => String(c['versao'] ?? '')).filter(Boolean);
+      const versaoMaisNova = versoes.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0] ?? null;
       const resumo = {
+        semSinal: comSituacao.filter((c) => c.situacao === 'sem-sinal').length,
+        clientes: new Set(comSituacao.map((c) => c['clienteId'])).size,
+        versaoMaisNova,
         caixas: comSituacao.length,
         saudaveis: comSituacao.filter((c) => c.situacao === 'saudavel').length,
         comProblema: comSituacao.filter((c) => c.situacao !== 'saudavel').length,
@@ -96,13 +106,17 @@ export function rotasDoCentral(banco: BancoNuvem): Rota {
     const id = partes[3];
 
     if (metodo === 'GET' && id === undefined) {
-      const clientes = await banco.transacao('continuum_central', null, (tx) =>
-        tx.consultar(`
-          SELECT c.id, c.nome, c.nome_fantasia, c.tipo_documento, c.documento, c.segmento, c.dominio, c.situacao, c.criado_em,
+      await aplicarInadimplencia(banco);
+      const linhas = await banco.transacao('continuum_central', null, (tx) =>
+        tx.consultar<{ mensalidade_centavos: number; pago_ate: string | null; hoje: string }>(`
+          SELECT c.id, c.nome, c.nome_fantasia, c.tipo_documento, c.documento, c.segmento, c.dominio, c.situacao, c.suspenso_por, c.criado_em,
+                 c.plano, c.mensalidade_centavos::int AS mensalidade_centavos, c.dia_vencimento, to_char(c.pago_ate, 'YYYY-MM-DD') AS pago_ate,
+                 to_char((now() AT TIME ZONE 'America/Sao_Paulo')::date, 'YYYY-MM-DD') AS hoje,
                  (SELECT count(*)::int FROM lojas l WHERE l.cliente_id = c.id) AS lojas,
                  (SELECT count(*)::int FROM dispositivos d WHERE d.cliente_id = c.id AND d.situacao = 'ativo') AS caixas_ativos
           FROM clientes c ORDER BY c.nome`),
       );
+      const clientes = linhas.map(({ hoje, ...c }) => ({ ...c, pagamento: situacaoDoPlano(c.mensalidade_centavos, c.pago_ate, hoje) }));
       return { status: 200, corpo: { clientes } };
     }
 
@@ -183,7 +197,7 @@ export function rotasDoCentral(banco: BancoNuvem): Rota {
       const situacao = texto(ctx.corpo['situacao']);
       if (situacao !== 'ativo' && situacao !== 'suspenso') throw new RecusaDaNuvem(400, 'Situação: ativo ou suspenso.');
       await banco.transacaoDaPlataforma(async (tx) => {
-        const r = await tx.consultar('UPDATE clientes SET situacao = $2 WHERE id = $1 RETURNING id', id, situacao);
+        const r = await tx.consultar('UPDATE clientes SET situacao = $2, suspenso_por = $3 WHERE id = $1 RETURNING id', id, situacao, situacao === 'suspenso' ? 'equipe' : null);
         if (r.length === 0) throw new RecusaDaNuvem(404, 'Cliente não encontrado.');
         await auditar(tx, sessao.usuarioId, id, `cliente.${situacao}`, id, {});
       });

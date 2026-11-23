@@ -58,7 +58,10 @@ export function comprovanteHtml(d: DadosDoComprovante, config: ConfiguracaoCompr
     })
     .join('');
   const pagamentos = venda.pagamentos.map((p) => linha(FORMAS[p.forma], formatarReais(p.valorCentavos))).join('');
-  const documento = venda.documentoCliente === null ? '' : `<p>CPF/CNPJ do cliente: ${esc(mascararDocumento(venda.documentoCliente) ?? '')}</p>`;
+  // CPF (11 dígitos) ou CNPJ (14) do consumidor, mascarado: o papel fica com o cliente e pode se perder.
+  const tipoDocumento = venda.documentoCliente?.length === 14 ? 'CNPJ' : 'CPF';
+  const documento =
+    venda.documentoCliente === null ? '' : `<p>${tipoDocumento} do consumidor: ${esc(mascararDocumento(venda.documentoCliente) ?? '')}</p>`;
   const larguraMm = config.largura === 58 ? 48 : 72; // área útil de impressão de cada bobina
 
   return `<!doctype html>

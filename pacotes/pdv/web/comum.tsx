@@ -53,7 +53,14 @@ export function Cabecalho({ estado, children }: { estado: EstadoDoCaixa; childre
         <small>Fila para enviar</small>
         <Chip tom={filaPendente === 0 ? 'sucesso' : 'info'}>{filaPendente} eventos</Chip>
       </div>
-      {sincronizacao !== null && (
+      {/* Conexão saudável: só um ponto verde discreto. Qualquer problema: o chip colorido e a faixa abaixo. */}
+      {sincronizacao !== null && sincronizacao.bloqueio === null && sincronizacao.estado === 'saudavel' && (
+        <div className="conexao-ok" title={`${DETALHE_DO_ESTADO.saudavel} (${sincronizacao.destino})`} role="status">
+          <span className="ponto" aria-hidden="true" />
+          <small>Conectado</small>
+        </div>
+      )}
+      {sincronizacao !== null && (sincronizacao.bloqueio !== null || sincronizacao.estado !== 'saudavel') && (
         <div className="fila" title={`Agente da loja: ${sincronizacao.destino}`}>
           <small>Conexão</small>
           <Chip tom={sincronizacao.bloqueio !== null ? 'erro' : TOM_DO_ESTADO[sincronizacao.estado]}>
@@ -64,12 +71,12 @@ export function Cabecalho({ estado, children }: { estado: EstadoDoCaixa; childre
       <div className="acoes">{children}</div>
     </header>
     {sincronizacao !== null && sincronizacao.bloqueio !== null && (
-      <div className="faixa">
+      <div className="faixa chamativa" data-estado="offline">
         <FaixaDeEstado estado="offline" extra="Fila parada" detalhe={`O agente recusou um envio: ${sincronizacao.bloqueio.erro}. As vendas continuam; chame o suporte.`} />
       </div>
     )}
     {sincronizacao !== null && sincronizacao.bloqueio === null && sincronizacao.estado !== 'saudavel' && (
-      <div className="faixa">
+      <div className={sincronizacao.estado === 'offline' || sincronizacao.estado === 'degradado' ? 'faixa chamativa' : 'faixa'} data-estado={sincronizacao.estado}>
         <FaixaDeEstado estado={sincronizacao.estado} detalhe={DETALHE_DO_ESTADO[sincronizacao.estado]}>
           <span>{filaPendente} na fila</span>
         </FaixaDeEstado>

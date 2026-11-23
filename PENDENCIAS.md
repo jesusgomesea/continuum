@@ -34,6 +34,7 @@
 | **Passo 3.4** · Monitor ao vivo | `pacotes/nuvem` | 🟡 **Feito, aguardando validação** (Central vê cada caixa ao vivo; SEM SINAL depois de 45 s) |
 | **Passo 3.5** · Executáveis para o teste de conexão | `pacotes/*/dist/executavel` | 🟡 **Feito, aguardando validação** (`nuvem-continuum.exe`, `pdv-continuum.exe`, `agente-continuum.exe`) |
 | **Passo 4.2 (parte)** · Instaladores | `instaladores/` | 🟡 **Feito, aguardando validação** (Setup.exe da Nuvem, PDV e Agente; guia em `INSTALACAO.md`) |
+| **Melhorias (23/11)** · PDV, ERP e Central | `pacotes/pdv`, `pacotes/nuvem` | 🟡 **Feito, aguardando validação** (busca e atalhos no PDV; painel, relatórios, usuários, PIN, compras, importação e fechamentos no ERP; monitor rico, ficha, cobrança e auditoria no Central) |
 | **Adiantado do 3.2** · Sync Engine e agente da loja | `pacotes/sync`, `pacotes/agente` | 🟡 **Feito, aguardando validação** (caixa → agente pela rede, sem duplicar e sem perder; `agente-continuum.exe`) |
 
 ## 2. Próximo passo
@@ -299,15 +300,106 @@
   **Os três ficaram instalados neste computador** (atalhos na área de trabalho), com os dados ainda vazios.
 - Falta: assinatura digital (o Windows mostra o aviso do SmartScreen) e a hospedagem da nuvem.
 
-### Próximos passos (depois de 22/11)
+### Melhorias nas três frentes (23/11, pedido do lead: "faça tudo")
+
+**PDV**
+- **Busca rápida:**
+  - por parte do nome, sem acento, ou pelo código de barras;
+  - Enter lança o produto; "3*cafe" lança 3 de uma vez.
+- **Atalhos de teclado:**
+  - F2 quantidade, F4 pagamento, F6 venda em espera;
+  - Esc tira o item selecionado; Delete tira o último item;
+  - a legenda das teclas fica na tela.
+- **Balança:**
+  - lê a etiqueta de peso (`2 CCCC 0 PPPPPP D`) em `pacotes/pdv/src/balanca.ts`;
+  - por enquanto só aceita quilos inteiros (ver "Falta" abaixo).
+- **Pagamento:** notas rápidas (R$ 10, 20, 50, 100 e valor exato) e troco em destaque.
+- **CPF do cliente:**
+  - campo opcional, validado na hora;
+  - sai no comprovante e sobe à nuvem no campo `documentoCliente`, que já existia.
+- **Estoque na tela:** o saldo aparece em cada produto; baixo (até 5) em âmbar, zerado em vermelho.
+- **Venda em espera:**
+  - pausar uma venda e atender outro cliente;
+  - fica numa tabela local (migração 5 do caixa) e não gera evento.
+- **Visual:**
+  - botões maiores para toque e total grande;
+  - animação curta e bip (Web Audio, com botão para desligar);
+  - faixa de conexão discreta quando está tudo bem.
+- **PIN do supervisor:** o caixa aplica o PIN que vem do ERP, tanto na ativação quanto na descida.
+
+**ERP**
+- **Menu lateral:** vira uma faixa no celular.
+- **Painel do dono (tela inicial):**
+  - vendas de hoje comparadas com ontem e com o mesmo dia da semana passada;
+  - ticket médio;
+  - gráfico de 30 dias, movimento por hora e formas de pagamento;
+  - mais vendidos, estoque baixo e caixas.
+- **Vendas, relatório de qualquer período:**
+  - atalhos de período: hoje, ontem, 7 dias, 30 dias e mês;
+  - filtro por loja;
+  - totais por dia, forma de pagamento, produto, caixa, hora e operador;
+  - exporta Excel (CSV) e imprime ou salva em PDF.
+- **Alertas e compras (UC20):**
+  - estoque negativo para conferir;
+  - produtos abaixo do mínimo;
+  - lista de compras (repor até 2× o mínimo), exportável.
+- **Fechamentos de caixa:** cada turno com fundo, vendas, sangrias e suprimentos, esperado × contado e sobra ou falta.
+- **Usuários (UC16):**
+  - criar usuários, trocar perfil, desativar e trocar senha;
+  - ninguém se desativa, e o negócio nunca fica sem um dono ativo.
+- **PIN do supervisor:**
+  - definido em "Loja, comprovante e PIN";
+  - desce aos caixas só como hash; recusa PIN fácil (1111, 1234…).
+- **Importar produtos de planilha:**
+  - aceita CSV do Excel ou células coladas, com modelo para baixar e prévia;
+  - tudo ou nada: com qualquer linha errada, nada entra e a tela marca cada linha;
+  - estoque inicial opcional.
+- **Tabelas:** busca, ordenação por coluna e exportação.
+
+**Central**
+- **Monitor:**
+  - faixa de estado com o veredito ("Tudo funcionando" ou "N caixa(s) fora do ar") e contadores;
+  - caixas agrupados por cliente, com filtro "só com problema" e busca;
+  - alertas: sem sinal, sem internet, fila acumulando (50 ou mais), conexão instável (3 ou mais quedas em 24 h), versão desatualizada e cliente suspenso;
+  - linha do tempo de quedas e mudanças de estado (24 h);
+  - **modo telão** para TV (Esc sai).
+- **Ficha do cliente:**
+  - caixas com quedas em 7 dias e versão;
+  - vendas de 30 dias e contagem de produtos e usuários;
+  - plano e cobrança;
+  - auditoria do cliente.
+- **Plano e cobrança:**
+  - plano, mensalidade e dia de vencimento;
+  - registrar o pagamento de um mês;
+  - situação: em dia, vence logo ou atrasado;
+  - **suspensão automática** depois de 10 dias de atraso, só para quem tem mensalidade e pagamento registrado;
+  - pagar reativa na hora; a suspensão feita pela Equipe continua.
+- **Auditoria:** quem mudou o quê e quando (Equipe, donos, caixas e o sistema), exportável.
+
+**Por baixo**
+- **Migração 6 da nuvem (`gestao_e_central`):**
+  - PIN do supervisor;
+  - plano e cobrança;
+  - pagamentos do plano;
+  - histórico de conexão: o sinal de vida grava quando o estado muda e quando o caixa volta depois de ficar sem sinal.
+- **Rotas novas:** `pacotes/nuvem/src/erp-gestao.ts` e `central-gestao.ts`.
+- **Componentes:** gráficos em SVG feitos à mão (sem biblioteca) e tabela com exportação, em `pacotes/nuvem/web/componentes/`.
+- **Testes:** 246 passando (+30). Telas conferidas no navegador, no computador e no celular.
+
+**Falta**
+- **Venda por peso quebrado (ex.: 350 g):**
+  - a quantidade é inteira em todo o sistema;
+  - proposta: guardar produtos em kg como gramas;
+  - isso mexe no domínio, no contrato e na nuvem, então precisa da decisão do lead.
+
+### Próximos passos (depois de 23/11)
 
 1. **Decidir o ponto 9 da seção 4** (como a nuvem sabe de qual caixa veio cada evento repassado pelo
    agente) e então: agente ativado por código, agente → nuvem (subida e descida) para lojas com
    vários caixas, e o teste de queda desse trecho.
-2. PIN do supervisor definido no ERP e descendo para os caixas (hoje vale o padrão 1234).
-3. Telas que faltam no ERP: usuários (UC16) e conferir estoque negativo (UC20).
-4. Passo 4.2 (instalador e hospedagem, precisa de contas de vocês) e 4.3 (cliente piloto).
-5. Validar tudo o que está 🟡 e fazer os commits (o trabalho desde o Passo 1.4 está fora do git).
+2. Decidir a venda por peso quebrado (gramas) e implementar.
+3. Passo 4.2 (hospedagem e assinatura digital, precisam de contas de vocês) e 4.3 (cliente piloto).
+4. Validar tudo o que está 🟡 (inclusive as melhorias de 23/11).
 
 ## 3. Como rodar
 
@@ -316,7 +408,7 @@ O projeto exige **Node 26**.
 ```powershell
 .\dev instalar    # baixa as ferramentas (npm install)
 .\dev versao      # deve mostrar v26.x
-.\dev testar      # testes automáticos (hoje: 216 passando)
+.\dev testar      # testes automáticos (hoje: 246 passando)
 .\dev verificar   # tipos do TypeScript (hoje: nenhum erro)
 .\dev vitrine     # vitrine da interface em http://localhost:5173
 .\dev pdv         # o PDV no navegador em http://localhost:5174

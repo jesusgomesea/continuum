@@ -44,8 +44,8 @@ export function rotasDosDispositivos(banco: BancoNuvem, segredo: string): Rota {
       await tx.consultar("INSERT INTO auditoria (id, cliente_id, autor_id, acao, alvo) VALUES ($1, $2, $3, 'caixa.ativado', $4)", gerarId(), d.cliente_id, d.id, d.id);
 
       const loja = await tx.consultarUma<{ id: string; nome_reduzido: string; nome: string }>('SELECT id, nome_reduzido, nome FROM lojas WHERE id = $1', d.loja_id);
-      const p = await tx.consultarUma<{ versao: number; regra_estoque: string; limite_desconto_pct: number; comprovante: unknown }>(
-        'SELECT versao, regra_estoque, limite_desconto_pct, comprovante FROM parametros_cliente WHERE cliente_id = $1',
+      const p = await tx.consultarUma<{ versao: number; regra_estoque: string; limite_desconto_pct: number; comprovante: unknown; pin_supervisor_hash: string | null }>(
+        'SELECT versao, regra_estoque, limite_desconto_pct, comprovante, pin_supervisor_hash FROM parametros_cliente WHERE cliente_id = $1',
         d.cliente_id,
       );
       const catalogo = await tx.consultar(
@@ -63,7 +63,7 @@ export function rotasDosDispositivos(banco: BancoNuvem, segredo: string): Rota {
         numeroCaixa: d.numero_caixa,
         credencial: r.credencial,
         loja: { id: loja?.id, nomeReduzido: loja?.nome_reduzido, nome: loja?.nome },
-        parametros: { versao: p?.versao ?? 1, regraEstoque: p?.regra_estoque ?? 'bloquear', limiteDescontoPct: p?.limite_desconto_pct ?? 10, comprovante: p?.comprovante ?? {} },
+        parametros: { versao: p?.versao ?? 1, regraEstoque: p?.regra_estoque ?? 'bloquear', limiteDescontoPct: p?.limite_desconto_pct ?? 10, comprovante: p?.comprovante ?? {}, ...(p?.pin_supervisor_hash ? { pinSupervisorHash: p.pin_supervisor_hash } : {}) },
         catalogo,
         cursorDescida: Number(cursor?.seq ?? 0),
       };

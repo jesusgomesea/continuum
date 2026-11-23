@@ -5,6 +5,8 @@ import { criarApiDaNuvem } from './api.ts';
 import type { ApiDaNuvem } from './api.ts';
 import { BancoNuvem } from './banco.ts';
 import { rotasDoCentral } from './central.ts';
+import { aplicarInadimplencia, rotasDaGestaoDoCentral } from './central-gestao.ts';
+import { rotasDaGestao } from './erp-gestao.ts';
 import { rotasDoErp } from './erp.ts';
 import { rotasDosCaixas } from './erp-caixas.ts';
 import { rotasDosDispositivos } from './dispositivos.ts';
@@ -29,8 +31,11 @@ export async function prepararNuvem(pasta: string, portaBanco = Number(process.e
   const api = criarApiDaNuvem(banco, {
     segredo,
     dominioPadrao: ACESSOS_DE_DEMONSTRACAO.dono.dominio,
-    rotasExtras: [rotasDoCentral(banco), rotasDoErp(banco), rotasDosCaixas(banco, segredo), rotasDosDispositivos(banco, segredo), rotasDoRecebimento(banco)],
+    rotasExtras: [rotasDaGestaoDoCentral(banco), rotasDaGestao(banco), rotasDoCentral(banco), rotasDoErp(banco), rotasDosCaixas(banco, segredo), rotasDosDispositivos(banco, segredo), rotasDoRecebimento(banco)],
   });
+  // Uma vez por hora, suspende quem passou da tolerância de atraso (também roda ao abrir a lista de clientes).
+  const cobranca = setInterval(() => void aplicarInadimplencia(banco).catch(() => undefined), 60 * 60 * 1000);
+  cobranca.unref();
   const a = ACESSOS_DE_DEMONSTRACAO;
   const mensagens = [
     `PostgreSQL local na porta ${portaBanco} (dados em ${pasta})${aplicadas.length ? `; migrações aplicadas agora: ${aplicadas.join(', ')}` : ''}`,
@@ -42,6 +47,7 @@ export async function prepararNuvem(pasta: string, portaBanco = Number(process.e
     banco,
     mensagens,
     async desligar() {
+      clearInterval(cobranca);
       await banco.fechar();
       postgres.parar();
     },

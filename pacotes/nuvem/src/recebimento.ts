@@ -10,7 +10,11 @@ import type { Evento } from '@continuum/contratos';
 import type { BancoNuvem, Transacao } from './banco.ts';
 import { RecusaDaNuvem } from './api.ts';
 import type { PedidoHttp, Rota } from './api.ts';
+import { gerarId } from '@continuum/dominio';
 import { hashDaCredencial } from './seguranca.ts';
+
+/** Mesmo limite do monitor (central.ts): mais que isso sem sinal conta como queda. */
+const SEGUNDOS_SEM_SINAL = 45;
 
 export const MAXIMO_EVENTOS_POR_LOTE = 1000;
 
@@ -156,15 +160,32 @@ export function rotasDoRecebimento(banco: BancoNuvem): Rota {
         throw new RecusaDaNuvem(400, (erro as Error).message);
       }
       if (sinal.dispositivoId !== d.id) throw new RecusaDaNuvem(403, 'O sinal é de outro dispositivo.');
-      await banco.transacao('continuum_app', d.cliente_id, (tx) =>
-        tx.consultar(
+      await banco.transacao('continuum_app', d.cliente_id, async (tx) => {
+        // Histórico de conexão para o Central: guarda quando o estado muda e quando o caixa volta depois
+        // de ficar sem sinal (com quanto tempo ficou fora). Sinal repetido no mesmo estado não grava nada.
+        const antes = await tx.consultarUma<{ estado: string; segundos: number }>(
+          'SELECT estado, floor(extract(epoch FROM now() - recebido_em))::int AS segundos FROM sinais_de_vida WHERE dispositivo_id = $1',
+          d.id,
+        );
+        if (antes !== undefined && antes.segundos > SEGUNDOS_SEM_SINAL) {
+          await tx.consultar(
+            "INSERT INTO eventos_de_conexao (id, cliente_id, dispositivo_id, tipo, estado_anterior, estado, segundos_sem_sinal) VALUES ($1, $2, $3, 'retorno', $4, $5, $6)",
+            gerarId(), d.cliente_id, d.id, antes.estado, sinal.estado, antes.segundos,
+          );
+        } else if (antes === undefined || antes.estado !== sinal.estado) {
+          await tx.consultar(
+            "INSERT INTO eventos_de_conexao (id, cliente_id, dispositivo_id, tipo, estado_anterior, estado) VALUES ($1, $2, $3, 'estado', $4, $5)",
+            gerarId(), d.cliente_id, d.id, antes?.estado ?? null, sinal.estado,
+          );
+        }
+        await tx.consultar(
           `INSERT INTO sinais_de_vida (dispositivo_id, cliente_id, estado, fila_pendente, caixa_aberto, ultima_venda_em, versao, recebido_em)
            VALUES ($1, $2, $3, $4, $5, $6, $7, now())
            ON CONFLICT (dispositivo_id) DO UPDATE SET estado = excluded.estado, fila_pendente = excluded.fila_pendente,
              caixa_aberto = excluded.caixa_aberto, ultima_venda_em = excluded.ultima_venda_em, versao = excluded.versao, recebido_em = now()`,
           d.id, d.cliente_id, sinal.estado, sinal.filaPendente, sinal.caixaAberto, sinal.ultimaVendaEm, sinal.versaoPrograma,
-        ),
-      );
+        );
+      });
       return { status: 200, corpo: { ok: true } };
     }
 

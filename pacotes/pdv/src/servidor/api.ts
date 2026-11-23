@@ -13,7 +13,7 @@ import {
   EstoqueInsuficienteError,
   ProdutoNaoEncontradoError,
 } from '@continuum/dominio';
-import type { Caixa, PedidoDoCaixa } from '../caixa.ts';
+import type { Caixa, CarrinhoEmEspera, PedidoDoCaixa } from '../caixa.ts';
 import { OperacaoDeCaixaError } from '../caixa.ts';
 import { comprovanteHtml } from '../comprovante.ts';
 import type { Sincronizacao } from '../sincronizacao.ts';
@@ -34,6 +34,8 @@ export function estadoDoCaixa(caixa: Caixa, sincronizacao: Sincronizacao | null 
     filaPendente: caixa.fila.contarPendentes(),
     catalogo: caixa.catalogo(),
     ultimasVendas: caixa.ultimasVendas(10),
+    /** Carrinhos pausados para atender outro cliente (não são vendas). */
+    emEspera: caixa.vendasEmEspera(),
     /** Situação do envio ao agente (null quando o caixa roda sem agente, como nos testes). */
     sincronizacao: sincronizacao?.resumo() ?? null,
   };
@@ -88,6 +90,16 @@ export function criarApi(caixa: Caixa, sincronizacao: FonteDaSincronizacao = nul
     if (metodo === 'POST' && caminho === '/api/vendas') {
       const { venda, alertasEstoque, repetida } = caixa.registrarVenda(d as unknown as PedidoDoCaixa);
       return ok({ venda, alertasEstoque, repetida, estado: estado() });
+    }
+    // Venda em espera: guardar o carrinho e retomar depois (não é venda, não gera evento).
+    if (metodo === 'POST' && caminho === '/api/espera') {
+      caixa.guardarEmEspera(objeto(d['carrinho']) as unknown as CarrinhoEmEspera, texto(d['rotulo']));
+      return ok();
+    }
+    const retomar = /^\/api\/espera\/([^/]+)\/retomar$/.exec(caminho);
+    if (metodo === 'POST' && retomar !== null) {
+      const carrinho = caixa.retomarDaEspera(decodeURIComponent(retomar[1] ?? ''));
+      return ok({ carrinho, estado: estado() });
     }
     const cancelar = /^\/api\/vendas\/([^/]+)\/cancelar$/.exec(caminho);
     if (metodo === 'POST' && cancelar !== null) {
